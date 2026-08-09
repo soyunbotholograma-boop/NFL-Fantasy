@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ramirez y Amigos — Herramientas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --field:#050814;
+    --panel:#0b1030;
+    --blue:#2b3ef5;
+    --purple:#8b6cf5;
+    --chalk:#f4f5fb;
+    --chalk-dim: rgba(244,245,251,0.62);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Oswald', Arial, sans-serif;
+    min-height:100vh;
+    color:var(--chalk);
+    background:
+      radial-gradient(ellipse 900px 600px at 85% 0%, rgba(139,108,245,0.18) 0%, rgba(139,108,245,0) 60%),
+      radial-gradient(ellipse 800px 600px at 0% 100%, rgba(43,62,245,0.16) 0%, rgba(43,62,245,0) 60%),
+      linear-gradient(165deg, #0a0e26 0%, #05070f 60%, #000 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .wrap{max-width:820px; width:100%; text-align:center;}
+
+  .league-tag{
+    display:inline-block;
+    font-weight:700; font-style:italic; text-transform:uppercase;
+    letter-spacing:1px; font-size:13px; color:var(--chalk);
+    background:linear-gradient(100deg, var(--blue) 0%, #1626a8 100%);
+    padding:8px 26px 8px 16px; margin-bottom:22px;
+    clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%);
+  }
+
+  .wordmark{font-family:'Archivo Black', 'Oswald', sans-serif; font-style:italic; line-height:0.95; margin-bottom:44px;}
+  .wordmark .line1{font-size:46px; color:var(--chalk); letter-spacing:0.5px;}
+  .wordmark .line2{
+    font-size:46px; letter-spacing:0.5px;
+    background: linear-gradient(100deg, var(--purple) 10%, var(--blue) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:640px){ .cards{grid-template-columns:1fr;} }
+
+  .card{
+    display:block; text-decoration:none;
+    background:rgba(255,255,255,0.04);
+    border:1.5px solid rgba(150,165,255,0.2);
+    border-radius:14px;
+    padding:28px 22px;
+    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .card:hover{ transform:translateY(-3px); border-color:var(--purple); background:rgba(255,255,255,0.07); }
+  .card .icon{
+    width:52px; height:52px; margin:0 auto 16px;
+    border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(100deg, var(--blue) 0%, var(--purple) 100%);
+    font-size:24px;
+  }
+  .card h2{
+    font-family:'Archivo Black', sans-serif; font-style:italic;
+    font-size:20px; margin:0 0 8px; letter-spacing:0.3px; color:var(--chalk);
+    text-transform:uppercase;
+  }
+  .card p{font-size:13px; color:var(--chalk-dim); margin:0; line-height:1.5;}
+
+  .missing-note{
+    margin-top:36px; font-size:12px; color:var(--chalk-dim);
+    background:rgba(255,255,255,0.04); border:1px solid rgba(150,165,255,0.16);
+    border-radius:10px; padding:12px 16px; text-align:left; line-height:1.6;
+  }
+  .missing-note code{background:rgba(0,0,0,0.3); padding:1px 6px; border-radius:4px;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="league-tag" id="leagueTag">RAMIREZ Y AMIGOS</div>
+    <div class="wordmark">
+      <div class="line1">FANTASY</div>
+      <div class="line2">FOOTBALL</div>
+    </div>
+
+    <div class="cards">
+      <a class="card" href="fantasy_poster.html">
+        <div class="icon">🏆</div>
+        <h2>Resultados Semanales</h2>
+        <p>Genera el póster de posiciones de la liga a partir de tu Google Sheet.</p>
+      </a>
+      <a class="card" href="survivor-league_new.html">
+        <div class="icon">🔥</div>
+        <h2>Survivor League</h2>
+        <p>Gestiona picks, eliminaciones y el póster semanal del survivor.</p>
+      </a>
+    </div>
+
+    <div class="missing-note">
+      <strong>Nota:</strong> esta página espera que <code>fantasy_poster.html</code> y <code>survivor-league_new.html</code> estén subidos en el mismo repositorio, con esos nombres exactos. Si tu archivo de survivor tiene otro nombre, edita el <code>href</code> del segundo botón en este archivo (<code>index.html</code>) para que coincida.
+    </div>
+  </div>
+</body>
+</html>
