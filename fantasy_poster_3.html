@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantasy Football — Resultados Semanales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --field:#050814;
+    --panel:#0b1030;
+    --panel-2:#101a4a;
+    --line: rgba(150,165,255,0.14);
+    --chalk:#f4f5fb;
+    --chalk-dim: rgba(244,245,251,0.62);
+    --blue:#2b3ef5;
+    --blue-dim: rgba(43,62,245,0.3);
+    --purple:#8b6cf5;
+    --gold:#f2d24b;
+    --silver:#c9ccd1;
+    --bronze:#c1622d;
+    --red:#e0342a;
+    --green:#3aa856;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Oswald', Arial, sans-serif;
+    background:
+      radial-gradient(ellipse 900px 600px at 85% 0%, rgba(139,108,245,0.16) 0%, rgba(139,108,245,0) 60%),
+      radial-gradient(ellipse 800px 600px at 0% 100%, rgba(43,62,245,0.14) 0%, rgba(43,62,245,0) 60%),
+      linear-gradient(165deg, #0a0e26 0%, #05070f 60%, #000 100%);
+    color:var(--chalk);
+    min-height:100vh;
+    padding:24px;
+  }
+  .app{
+    max-width:1220px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width:900px){ .app{grid-template-columns:1fr;} }
+
+  /* ---------- PANEL ---------- */
+  .panel{
+    background:
+      radial-gradient(ellipse 480px 320px at 100% 0%, rgba(139,108,245,0.35) 0%, rgba(139,108,245,0) 60%),
+      linear-gradient(165deg, #131a44 0%, #0b1030 55%, #070a22 100%);
+    border:1px solid rgba(150,165,255,0.16);
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 10px 26px rgba(6,8,26,0.35);
+    position:sticky;
+    top:24px;
+    max-height:calc(100vh - 48px);
+    overflow-y:auto;
+  }
+  .panel h1{font-size:19px;margin:0 0 4px;color:var(--chalk);}
+  .panel .sub{font-size:12.5px;color:var(--chalk-dim);margin:0 0 16px;line-height:1.4;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:#b7c0ee;margin-bottom:5px;}
+  .field label .opt{text-transform:none;font-weight:400;color:#7c85b8;}
+  .field input[type=text], .field select{
+    width:100%;padding:9px 10px;border:1.5px solid rgba(150,165,255,0.22);border-radius:8px;
+    font-size:13px;font-family:inherit;background:rgba(255,255,255,0.05);color:var(--chalk);
+  }
+  .field input::placeholder{color:#6d76a8;}
+  .field select option{background:#131a44;color:var(--chalk);}
+  .field input:focus, .field select:focus{outline:none;border-color:var(--purple);}
+  .btn{width:100%;padding:11px;border:none;border-radius:8px;font-family:'Oswald',sans-serif;font-weight:600;font-size:13.5px;letter-spacing:0.4px;cursor:pointer;text-transform:uppercase;}
+  .btn-primary{background:linear-gradient(100deg, var(--blue) 0%, var(--purple) 100%);color:#fff;}
+  .btn-primary:hover{filter:brightness(1.1);}
+  .btn-download{background:var(--red);color:#fff;}
+  .btn-download:hover{background:#b71822;}
+  .btn-ghost{background:rgba(255,255,255,0.08);color:var(--chalk);border:1px solid rgba(150,165,255,0.2);}
+  .btn-ghost:hover{background:rgba(255,255,255,0.14);}
+  .divider{border:none;border-top:1px solid rgba(150,165,255,0.16);margin:16px 0;}
+  .status{font-size:12px;padding:8px 10px;border-radius:6px;margin-top:10px;display:none;}
+  .status.show{display:block;}
+  .status.ok{background:rgba(58,168,86,0.18);color:#7fe3a0;}
+  .status.err{background:rgba(224,52,42,0.18);color:#ff9d95;}
+  .hint{font-size:11.5px;color:#7c85b8;margin-top:4px;line-height:1.4;}
+  .download-row{display:flex;gap:8px;margin-top:6px;}
+  .download-row .btn{flex:1;}
+  details.advanced{margin-top:4px;}
+  details.advanced summary{cursor:pointer;font-size:12px;font-weight:600;color:#a9b6ff;text-transform:uppercase;letter-spacing:0.3px;padding:6px 0;}
+  .save-status{font-size:11px;color:#7c85b8;margin-top:8px;}
+  .save-status.warn{color:#f2c465;}
+
+  /* logo upload chips */
+  .logo-slot{
+    width:64px;height:64px;border-radius:10px;border:2px dashed rgba(150,165,255,0.3);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    background:rgba(255,255,255,0.05);position:relative;overflow:hidden;flex-shrink:0;
+  }
+  .logo-slot img{width:100%;height:100%;object-fit:contain;}
+  .logo-slot .plus{font-size:22px;color:#7c85b8;}
+  .nfl-logo-row{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+  .nfl-logo-row .txt{font-size:12px;color:#9aa3d1;line-height:1.4;}
+  .player-logo-list{max-height:260px;overflow-y:auto;border:1px solid rgba(150,165,255,0.16);border-radius:8px;padding:8px;background:rgba(255,255,255,0.03);}
+  .player-logo-row{display:flex;align-items:center;gap:10px;padding:6px 4px;border-bottom:1px solid rgba(150,165,255,0.12);}
+  .player-logo-row:last-child{border-bottom:none;}
+  .player-logo-row .plog{width:34px;height:34px;border-radius:6px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0;border:1px solid rgba(150,165,255,0.2);}
+  .player-logo-row .plog img{width:100%;height:100%;object-fit:contain;}
+  .player-logo-row .pname{font-size:12.5px;flex:1;color:var(--chalk);}
+  .player-logo-row .prm{font-size:11px;color:#8891c4;cursor:pointer;text-decoration:underline;}
+
+  /* ---------- POSTER ---------- */
+  .stage{display:flex;justify-content:center;}
+  #poster{
+    width:680px;
+    background:
+      radial-gradient(ellipse 900px 620px at 4% 100%, rgba(43,62,245,0.35) 0%, rgba(43,62,245,0) 60%),
+      linear-gradient(165deg, #060a26 0%, #050814 55%, #000 100%);
+    position:relative;overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,0.3);font-family:'Oswald', sans-serif;
+  }
+
+  /* Banner */
+  .banner{
+    position:relative;
+    padding:24px 26px 20px;
+    overflow:hidden;
+  }
+  .banner::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:120%;
+    background: linear-gradient(100deg, rgba(4,6,16,0) 0%, rgba(30,40,150,0.5) 45%, rgba(43,62,245,0.7) 60%, rgba(4,6,16,0) 62%);
+    clip-path: polygon(0 0, 100% 0, 100% 55%, 40% 100%, 0 88%);
+    opacity:.9; pointer-events:none;
+  }
+  .league-tag{
+    position:relative; z-index:1;
+    display:inline-block;
+    font-family:'Oswald',sans-serif; font-weight:700; font-style:italic; text-transform:uppercase;
+    letter-spacing:1px; font-size:13px; color:var(--chalk);
+    background:linear-gradient(100deg, var(--blue) 0%, #1626a8 100%);
+    padding:7px 22px 7px 14px; margin-bottom:16px;
+    clip-path: polygon(0 0, 100% 0, 86% 100%, 0% 100%);
+    outline:none; border:none; cursor:text;
+  }
+  .banner-main{position:relative; z-index:1; display:flex; align-items:center; gap:14px;}
+  .nfl-slot{
+    width:56px;height:56px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,0.04); border:1.5px dashed rgba(255,255,255,0.25);
+    cursor:pointer; overflow:hidden;
+  }
+  .nfl-slot img{width:100%;height:100%;object-fit:contain;}
+  .nfl-slot svg{width:70%;height:70%;}
+  .wordmark{font-family:'Archivo Black', 'Oswald', sans-serif; font-style:italic; line-height:0.95;}
+  .wordmark .line1{font-size:38px; color:var(--chalk); letter-spacing:0.5px;}
+  .wordmark .line2{
+    font-size:38px; letter-spacing:0.5px;
+    background: linear-gradient(100deg, var(--purple) 10%, var(--blue) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .semana-badge{
+    position:relative; z-index:1;
+    margin-top:10px;
+    font-family:'Archivo Black', sans-serif; font-style:italic;
+    font-size:20px; letter-spacing:1px;
+    color:var(--purple);
+  }
+  .semana-badge input{
+    background:none;border:none;color:inherit;font:inherit;width:40px;outline:none;
+    border-bottom:1.5px solid rgba(139,108,245,0.5);
+  }
+
+  /* Column header */
+  .col-header{
+    display:grid;
+    grid-template-columns:48px 40px 1fr 48px 56px 40px;
+    align-items:center;
+    padding:14px 22px 8px;
+    position:relative; z-index:1;
+  }
+  .col-header span{font-weight:600;font-size:11.5px;letter-spacing:1.5px;color:var(--chalk-dim);text-transform:uppercase;}
+  .col-header .c-rd, .col-header .c-pts, .col-header .c-logo{text-align:center;}
+
+  .rows{position:relative; z-index:1; padding:0 22px 22px;}
+  .rowline{
+    display:grid;
+    grid-template-columns:48px 40px 1fr 48px 56px 40px;
+    align-items:center;
+    min-height:44px;
+    margin-bottom:6px;
+    border-radius:4px;
+    position:relative;
+  }
+  .rowline.dark{background:var(--panel);}
+  .rowline.light{background:rgba(244,245,251,0.94);}
+
+  .badge{width:32px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border-radius:4px;margin-left:8px;color:var(--field);}
+  .badge.b-gold{background:var(--gold);}
+  .badge.b-silver{background:var(--silver);}
+  .badge.b-bronze{background:var(--bronze);color:#fff;}
+  .badge.b-light{background:rgba(255,255,255,0.12);color:var(--chalk);}
+  .badge.b-navy{background:var(--panel-2);color:#fff;}
+  .rowline.light .badge.b-light{background:#e4e6ea;color:var(--field);}
+
+  .team-logo{
+    width:28px;height:28px;border-radius:6px;justify-self:center;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    background:rgba(255,255,255,0.06);cursor:pointer;
+  }
+  .rowline.light .team-logo{background:#e4e6ea;}
+  .team-logo img{width:100%;height:100%;object-fit:contain;}
+  .team-logo .plus{font-size:13px;color:rgba(255,255,255,0.35);}
+  .rowline.light .team-logo .plus{color:#b7bcc4;}
+
+  .nm{font-weight:600;font-size:14px;letter-spacing:0.3px;text-transform:uppercase;padding-left:10px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rowline.dark .nm{color:#fff;}
+  .rowline.light .nm{color:var(--field);}
+
+  .rd, .pts{text-align:center;font-weight:600;font-size:13.5px;outline:none;}
+  .rowline.dark .rd, .rowline.dark .pts{color:#dfe3e8;}
+  .rowline.light .rd, .rowline.light .pts{color:var(--field);}
+  .pts{font-weight:700;font-size:14.5px;}
+
+  .arrow{justify-self:center;width:18px;height:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .arrow svg{width:15px;height:15px;}
+
+  .empty-msg{padding:40px 22px;text-align:center;color:var(--chalk-dim);font-size:13px;position:relative;z-index:1;}
+</style>
+</head>
+<body>
+
+<!-- Estado horneado dentro del propio archivo. Se llena al usar "Guardar copia HTML". -->
+<script type="application/json" id="embeddedStateData">{}</script>
+
+<div class="app">
+
+  <!-- ============ CONTROL PANEL (not exported) ============ -->
+  <div class="panel" id="panel">
+    <h1>Generador de Resultados</h1>
+    <p class="sub">Configura el link de tu Google Sheet, tu logo y los logos de cada jugador una sola vez — quedan guardados en este navegador. Cada semana solo abres el archivo, pones el número de semana y descargas.</p>
+
+    <div class="field">
+      <label>Nombre de la liga</label>
+      <input type="text" id="leagueNameInput" placeholder="RAMIREZ Y AMIGOS" value="RAMIREZ Y AMIGOS">
+    </div>
+
+    <div class="field">
+      <label>Logo NFL / liga</label>
+      <div class="nfl-logo-row">
+        <div class="logo-slot" id="nflLogoSlot"><span class="plus">+</span></div>
+        <div class="txt">Sube tu logo (NFL, tu liga, lo que quieras). Se guarda automáticamente.<br><button class="prm" id="btnRemoveNfl" style="border:none;background:none;color:#ff9d95;font-size:11px;cursor:pointer;padding:2px 0;">Quitar</button></div>
+      </div>
+      <input type="file" id="nflLogoInput" accept="image/png,image/*" style="display:none">
+    </div>
+
+    <hr class="divider">
+
+    <div class="field">
+      <label>Semana (número)</label>
+      <input type="text" id="semanaInput" placeholder="18" value="1">
+    </div>
+
+    <div class="field">
+      <label>Link CSV publicado de tu Google Sheet</label>
+      <input type="text" id="urlCurrent" placeholder="https://docs.google.com/.../pub?output=csv">
+      <div class="hint">Archivo &gt; Compartir &gt; Publicar en la web &gt; formato CSV, sobre la pestaña con la tabla de posiciones.</div>
+    </div>
+
+    <button class="btn btn-primary" id="btnFetch">Actualizar datos</button>
+    <div class="status" id="statusBox"></div>
+
+    <details class="advanced" id="advancedWrap" style="display:none">
+      <summary>Mapeo de columnas (avanzado)</summary>
+      <div class="field">
+        <label>Columna → Nombre</label>
+        <select id="mapName"></select>
+      </div>
+      <div class="field">
+        <label>Columna → Total acumulado (Pts, ranking)</label>
+        <select id="mapTotal"></select>
+      </div>
+      <div class="field">
+        <label>Columna → Puntos de esta semana (Rd)</label>
+        <select id="mapWeekly"></select>
+      </div>
+      <button class="btn btn-ghost" id="btnBuild">Actualizar póster</button>
+    </details>
+
+    <hr class="divider" id="dividerLogos" style="display:none">
+
+    <div id="playerLogosSection" style="display:none">
+      <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;color:#b7c0ee;margin-bottom:8px;">Logos por jugador <span class="opt" style="text-transform:none;font-weight:400;color:#7c85b8;">(opcional)</span></label>
+      <div class="player-logo-list" id="playerLogoList"></div>
+    </div>
+
+    <hr class="divider" id="dividerDownload" style="display:none">
+
+    <div id="downloadSection" style="display:none">
+      <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;color:#b7c0ee;margin-bottom:8px;">Exportar</label>
+      <div class="download-row">
+        <button class="btn btn-download" id="btnPng">Descargar PNG</button>
+        <button class="btn btn-download" id="btnJpg">Descargar JPG</button>
+      </div>
+      <div class="hint">Puedes editar nombre, Rd o Pts directamente sobre el póster, y hacer clic en la flecha para cambiarla, antes de exportar.</div>
+      <button class="btn btn-ghost" id="btnSaveHtmlFile" style="margin-top:10px;">Guardar copia HTML (con tu config.)</button>
+      <div class="hint">Guarda un .html con tu logo, link y logos de jugadores ya incluidos — útil para compartir esta herramienta ya lista, o como respaldo.</div>
+      <div class="save-status" id="saveStatus"></div>
+    </div>
+  </div>
+
+  <!-- ============ POSTER (this is what gets exported) ============ -->
+  <div class="stage">
+    <div id="poster">
+      <div class="banner">
+        <div class="league-tag" id="leagueTagDisplay" contenteditable="true">RAMIREZ Y AMIGOS</div>
+        <div class="banner-main">
+          <div class="nfl-slot" id="nflSlotPoster">
+            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="32" cy="32" rx="30" ry="19" fill="#7a4522" stroke="#3a2110" stroke-width="2"/>
+              <line x1="20" y1="32" x2="44" y2="32" stroke="#e9dcc9" stroke-width="2"/>
+              <line x1="25" y1="27" x2="25" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
+              <line x1="30" y1="27" x2="30" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
+              <line x1="35" y1="27" x2="35" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
+              <line x1="40" y1="27" x2="40" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
+            </svg>
+          </div>
+          <div class="wordmark">
+            <div class="line1">FANTASY</div>
+            <div class="line2">FOOTBALL</div>
+          </div>
+        </div>
+        <div class="semana-badge">SEMANA <input type="text" id="semanaNumDisplay" value="1"></div>
+      </div>
+
+      <div class="col-header">
+        <span class="c-no">NO</span>
+        <span class="c-logo"></span>
+        <span class="c-name">NOMBRE</span>
+        <span class="c-rd">Rd</span>
+        <span class="c-pts">Pts</span>
+        <span class="c-arrow"></span>
+      </div>
+
+      <div class="rows" id="rowsContainer">
+        <div class="empty-msg">Configura el link de tu Google Sheet para generar el póster.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+function defaultState(){
+  return {
+    leagueName: 'RAMIREZ Y AMIGOS',
+    csvUrl: '',
+    semana: '1',
+    nameField: '', totalField: '', weeklyField: '',
+    nflLogo: null,
+    playerLogos: {} // nombre (lowercase) -> data URL
+  };
+}
+let state = defaultState();
+let currentData = [];
+let headersCurrent = [];
+let fileHandle = null;
+
+const el = id => document.getElementById(id);
+
+/* ---------------- PERSISTENCE ---------------- */
+const LS_KEY_CORE = 'fantasy-poster-core';
+const LS_KEY_LOGOS = 'fantasy-poster-logos';
+let storageMode = 'none';
+
+function hasLocalStorage(){
+  try{ const k='__fp_test__'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }
+  catch(e){ return false; }
+}
+function coreSlice(){
+  return { leagueName: state.leagueName, csvUrl: state.csvUrl, semana: state.semana, nameField: state.nameField, totalField: state.totalField, weeklyField: state.weeklyField };
+}
+function logosPayload(){
+  return JSON.stringify({ nflLogo: state.nflLogo || null, playerLogos: state.playerLogos || {} });
+}
+function applyLogosPayload(raw){
+  const parsed = JSON.parse(raw);
+  if(parsed){
+    if(parsed.nflLogo) state.nflLogo = parsed.nflLogo;
+    if(parsed.playerLogos) state.playerLogos = parsed.playerLogos;
+  }
+}
+async function saveState(){
+  try{
+    if(window.storage){
+      await window.storage.set(LS_KEY_CORE, JSON.stringify(coreSlice()), false);
+      storageMode = 'claude';
+    } else if(hasLocalStorage()){
+      localStorage.setItem(LS_KEY_CORE, JSON.stringify(coreSlice()));
+      storageMode = 'local';
+    }
+  }catch(e){ console.warn('No se pudo autoguardar', e); }
+  markSaved();
+}
+async function saveLogos(){
+  try{
+    if(window.storage){
+      await window.storage.set(LS_KEY_LOGOS, logosPayload(), false);
+    } else if(hasLocalStorage()){
+      localStorage.setItem(LS_KEY_LOGOS, logosPayload());
+    }
+  }catch(e){
+    console.warn('No se pudieron guardar los logos', e);
+    alert('No se pudo guardar la imagen (puede pesar demasiado). Usa un PNG más pequeño, o "Guardar copia HTML" para respaldar.');
+  }
+  markSaved();
+}
+function getEmbeddedState(){
+  try{
+    const tag = el('embeddedStateData');
+    if(!tag) return null;
+    const data = JSON.parse(tag.textContent);
+    if(data && (data.csvUrl !== undefined)) return data;
+  }catch(e){}
+  return null;
+}
+async function loadState(){
+  state = defaultState();
+  if(window.storage){
+    try{
+      const res = await window.storage.get(LS_KEY_CORE, false);
+      if(res && res.value){ Object.assign(state, JSON.parse(res.value)); storageMode = 'claude'; }
+      const resLogos = await window.storage.get(LS_KEY_LOGOS, false);
+      if(resLogos && resLogos.value) applyLogosPayload(resLogos.value);
+      if(storageMode==='claude') return;
+    }catch(e){}
+  }
+  if(hasLocalStorage() && localStorage.getItem(LS_KEY_CORE)){
+    try{
+      Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY_CORE)));
+      const logos = localStorage.getItem(LS_KEY_LOGOS);
+      if(logos) applyLogosPayload(logos);
+      storageMode = 'local';
+      return;
+    }catch(e){}
+  }
+  const embedded = getEmbeddedState();
+  if(embedded){
+    Object.assign(state, embedded);
+    storageMode = hasLocalStorage() ? 'local' : 'none';
+    if(hasLocalStorage()){
+      try{
+        localStorage.setItem(LS_KEY_CORE, JSON.stringify(coreSlice()));
+        localStorage.setItem(LS_KEY_LOGOS, logosPayload());
+      }catch(e){}
+    }
+    return;
+  }
+  storageMode = window.storage ? 'claude' : (hasLocalStorage() ? 'local' : 'none');
+}
+function updateEmbeddedStateInDom(){
+  const tag = el('embeddedStateData');
+  if(tag) tag.textContent = JSON.stringify(state);
+}
+function markSaved(){
+  const box = el('saveStatus');
+  if(!box) return;
+  const time = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+  if(storageMode==='claude') box.textContent = 'Guardado en Claude · ' + time;
+  else if(storageMode==='local') box.textContent = 'Autoguardado en este navegador · ' + time;
+  else { box.textContent = 'Sin autoguardado — usa "Guardar copia HTML"'; box.className = 'save-status warn'; return; }
+  box.className = 'save-status';
+}
+
+async function saveHtmlFile(){
+  updateEmbeddedStateInDom();
+  const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  try{
+    if(window.showSaveFilePicker){
+      if(!fileHandle){
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: 'fantasy-football-poster.html',
+          types: [{ description:'Página HTML', accept:{ 'text/html':['.html'] } }]
+        });
+      }
+      const writable = await fileHandle.createWritable();
+      await writable.write(htmlContent);
+      await writable.close();
+    } else {
+      const blob = new Blob([htmlContent], {type:'text/html'});
+      const link = document.createElement('a');
+      link.download = 'fantasy-football-poster.html';
+      link.href = URL.createObjectURL(blob);
+      link.click();
+    }
+    const status = el('saveStatus');
+    if(status){ status.textContent = 'Archivo guardado · ' + new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); status.className='save-status'; }
+  }catch(err){
+    if(err && err.name==='AbortError') return;
+    console.warn(err);
+    alert('No se pudo guardar el archivo: ' + err.message);
+  }
+}
+el('btnSaveHtmlFile').addEventListener('click', saveHtmlFile);
+
+/* ============================================================
+   CSV PARSING
+   ============================================================ */
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else field += c;
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c === '\r'){}
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  const filtered = rows.filter(r => r.some(v => v.trim() !== ''));
+  if(!filtered.length) return [];
+  const headers = filtered[0].map(h => h.trim());
+  return filtered.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = (r[i] !== undefined ? r[i].trim() : ''));
+    return obj;
+  });
+}
+async function fetchCSV(url){
+  if(url.includes('pubhtml')){
+    throw new Error('Ese link es la vista previa (pubhtml), no el CSV. Cámbialo por uno que diga "/pub?...&output=csv" en vez de "/pubhtml?..."');
+  }
+  if(!url.includes('output=csv')){
+    throw new Error('Al link le falta "&output=csv" al final. Agrégalo y vuelve a intentar.');
+  }
+
+  let res;
+  try{
+    res = await fetch(url, {cache:'no-store'});
+  }catch(networkErr){
+    if(location.protocol === 'file:'){
+      throw new Error('El navegador bloqueó la conexión al abrir el archivo directamente (file://). Sube el archivo a GitHub Pages o Netlify Drop y ábrelo desde ahí — no hace falta hosting de pago.');
+    }
+    throw new Error('No se pudo conectar a Google (' + networkErr.message + '). Revisa tu conexión a internet o si algún bloqueador de anuncios está interfiriendo.');
+  }
+
+  if(!res.ok){
+    if(res.status === 401 || res.status === 403){
+      throw new Error('Google rechazó el acceso (HTTP ' + res.status + '). Revisa: 1) que sea "Publicar en la web" y no solo "Compartir", 2) que no tengas activado "Impedir que los lectores descarguen, impriman o copien" en el archivo.');
+    }
+    throw new Error('No se pudo leer el CSV (HTTP ' + res.status + ')');
+  }
+
+  const text = await res.text();
+  const trimmed = text.trim();
+  if(trimmed.startsWith('<')){
+    if(trimmed.toLowerCase().includes('accounts.google.com') || trimmed.toLowerCase().includes('sign in')){
+      throw new Error('Google devolvió una pantalla de inicio de sesión en vez del CSV — la hoja no está realmente pública. Repite "Archivo > Compartir > Publicar en la web" sobre la pestaña correcta.');
+    }
+    throw new Error('Google devolvió una página HTML en vez de datos CSV. Revisa que el link termine en "output=csv" y que sea del diálogo "Publicar en la web", no la URL para compartir/editar.');
+  }
+  return parseCSV(text);
+}
+
+function setStatus(msg, isErr){
+  const box = el('statusBox');
+  box.textContent = msg;
+  box.className = 'status show ' + (isErr ? 'err' : 'ok');
+}
+function guessColumn(headers, keywords){
+  const lower = headers.map(h => h.toLowerCase());
+  for(const kw of keywords){
+    const idx = lower.findIndex(h => h.includes(kw));
+    if(idx !== -1) return headers[idx];
+  }
+  return '';
+}
+function fillSelect(selectEl, headers, selected){
+  selectEl.innerHTML = '';
+  headers.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h; opt.textContent = h;
+    if(h === selected) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
+
+/* ============================================================
+   LOAD DATA
+   ============================================================ */
+async function loadData(){
+  const url = (el('urlCurrent').value || '').trim();
+  if(!url){ setStatus('Falta el link del CSV.', true); return; }
+  state.csvUrl = url;
+
+  el('btnFetch').textContent = 'Cargando...';
+  el('btnFetch').disabled = true;
+  try{
+    currentData = await fetchCSV(url);
+    if(!currentData.length) throw new Error('El CSV está vacío o no se pudo leer.');
+    headersCurrent = Object.keys(currentData[0]);
+
+    const nameGuess = state.nameField || guessColumn(headersCurrent, ['equipo','nombre','team','jugador','name']) || headersCurrent[0];
+    const totalGuess = state.totalField || guessColumn(headersCurrent, ['total','acumulado']) || headersCurrent[0];
+    const weeklyGuess = state.weeklyField || guessColumn(headersCurrent, ['weekly','semanal','semana','week']) || '';
+
+    fillSelect(el('mapName'), headersCurrent, nameGuess);
+    fillSelect(el('mapTotal'), headersCurrent, totalGuess);
+    fillSelect(el('mapWeekly'), headersCurrent, weeklyGuess);
+    state.nameField = nameGuess; state.totalField = totalGuess; state.weeklyField = weeklyGuess;
+
+    el('advancedWrap').style.display = 'block';
+    el('dividerLogos').style.display = 'block';
+    el('playerLogosSection').style.display = 'block';
+    el('dividerDownload').style.display = 'block';
+    el('downloadSection').style.display = 'block';
+
+    setStatus('Datos cargados: ' + currentData.length + ' equipos.', false);
+    buildPoster();
+    renderPlayerLogoList();
+    saveState();
+  }catch(err){
+    console.error(err);
+    setStatus('Error: ' + err.message, true);
+  }finally{
+    el('btnFetch').textContent = 'Actualizar datos';
+    el('btnFetch').disabled = false;
+  }
+}
+el('btnFetch').addEventListener('click', loadData);
+el('btnBuild').addEventListener('click', () => {
+  state.nameField = el('mapName').value;
+  state.totalField = el('mapTotal').value;
+  state.weeklyField = el('mapWeekly').value;
+  buildPoster();
+  saveState();
+});
+el('semanaInput').addEventListener('input', () => {
+  state.semana = el('semanaInput').value || '';
+  el('semanaNumDisplay').value = state.semana;
+  saveState();
+});
+el('leagueNameInput').addEventListener('input', () => {
+  state.leagueName = el('leagueNameInput').value || '';
+  el('leagueTagDisplay').textContent = state.leagueName.toUpperCase();
+  saveState();
+});
+el('leagueTagDisplay').addEventListener('input', () => {
+  el('leagueNameInput').value = el('leagueTagDisplay').textContent;
+  state.leagueName = el('leagueTagDisplay').textContent;
+  saveState();
+});
+el('semanaNumDisplay').addEventListener('input', () => {
+  el('semanaInput').value = el('semanaNumDisplay').value;
+  state.semana = el('semanaNumDisplay').value;
+  saveState();
+});
+
+/* ============================================================
+   LOGO UPLOADS
+   ============================================================ */
+function renderNflLogo(){
+  const slotPanel = el('nflLogoSlot');
+  const slotPoster = el('nflSlotPoster');
+  if(state.nflLogo){
+    slotPanel.innerHTML = '<img src="'+state.nflLogo+'" alt="logo">';
+    slotPoster.innerHTML = '<img src="'+state.nflLogo+'" alt="logo">';
+  } else {
+    slotPanel.innerHTML = '<span class="plus">+</span>';
+    slotPoster.innerHTML = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="32" cy="32" rx="30" ry="19" fill="#7a4522" stroke="#3a2110" stroke-width="2"/>
+      <line x1="20" y1="32" x2="44" y2="32" stroke="#e9dcc9" stroke-width="2"/>
+      <line x1="25" y1="27" x2="25" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
+      <line x1="30" y1="27" x2="30" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
+      <line x1="35" y1="27" x2="35" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
+      <line x1="40" y1="27" x2="40" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
+    </svg>`;
+  }
+}
+function handleImageFile(file, cb){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => cb(reader.result);
+  reader.readAsDataURL(file);
+}
+el('nflLogoSlot').addEventListener('click', () => el('nflLogoInput').click());
+el('nflLogoInput').addEventListener('change', (e) => {
+  handleImageFile(e.target.files[0], (dataUrl) => {
+    state.nflLogo = dataUrl;
+    renderNflLogo();
+    saveLogos();
+  });
+  e.target.value = '';
+});
+el('btnRemoveNfl').addEventListener('click', (e) => {
+  e.preventDefault();
+  state.nflLogo = null;
+  renderNflLogo();
+  saveLogos();
+});
+
+function playerLogoKey(name){ return (name||'').trim().toLowerCase(); }
+
+function renderPlayerLogoList(){
+  const box = el('playerLogoList');
+  if(!currentData.length || !state.nameField){ box.innerHTML = ''; return; }
+  const names = currentData.map(r => (r[state.nameField]||'').toString()).filter(Boolean);
+  box.innerHTML = '';
+  names.forEach(name => {
+    const key = playerLogoKey(name);
+    const row = document.createElement('div');
+    row.className = 'player-logo-row';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'plog';
+    thumb.innerHTML = state.playerLogos[key] ? '<img src="'+state.playerLogos[key]+'" alt="">' : '<span style="color:#c3c7ce;font-size:10px;">+</span>';
+    thumb.title = 'Subir logo para ' + name;
+
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/png,image/*'; inp.style.display = 'none';
+    inp.addEventListener('change', (e) => {
+      handleImageFile(e.target.files[0], (dataUrl) => {
+        state.playerLogos[key] = dataUrl;
+        renderPlayerLogoList();
+        buildPoster();
+        saveLogos();
+      });
+      e.target.value = '';
+    });
+    thumb.addEventListener('click', () => inp.click());
+
+    const nm = document.createElement('div');
+    nm.className = 'pname'; nm.textContent = name;
+
+    const rm = document.createElement('div');
+    rm.className = 'prm'; rm.textContent = 'quitar';
+    rm.style.display = state.playerLogos[key] ? 'block' : 'none';
+    rm.addEventListener('click', () => {
+      delete state.playerLogos[key];
+      renderPlayerLogoList();
+      buildPoster();
+      saveLogos();
+    });
+
+    row.appendChild(thumb); row.appendChild(inp); row.appendChild(nm); row.appendChild(rm);
+    box.appendChild(row);
+  });
+}
+
+/* ============================================================
+   BUILD POSTER
+   ============================================================ */
+function toNumber(v){ return parseFloat((v||'0').toString().replace(',', '.')) || 0; }
+
+function buildPoster(){
+  const nameField = state.nameField || el('mapName').value;
+  const totalField = state.totalField || el('mapTotal').value;
+  const weeklyField = state.weeklyField || el('mapWeekly').value;
+
+  if(!nameField || !totalField){ setStatus('Selecciona al menos las columnas de Nombre y Total.', true); return; }
+
+  const enriched = currentData.map(r => {
+    const total = toNumber(r[totalField]);
+    const weekly = weeklyField ? toNumber(r[weeklyField]) : 0;
+    return {...r, __total: total, __weekly: weekly, __prevTotal: total - weekly};
+  });
+
+  const currentRanked = [...enriched].sort((a,b) => b.__total - a.__total).map((r,i) => ({...r, __rank: i+1}));
+  const prevRanked = [...enriched].sort((a,b) => b.__prevTotal - a.__prevTotal).map((r,i) => ({...r, __prevRank: i+1}));
+  const prevRankMap = {};
+  prevRanked.forEach(r => { prevRankMap[playerLogoKey(r[nameField])] = r.__prevRank; });
+
+  const container = el('rowsContainer');
+  container.innerHTML = '';
+
+  currentRanked.forEach((r, i) => {
+    const rank = r.__rank;
+    const name = (r[nameField] || '').toString();
+    const key = playerLogoKey(name);
+    const rdVal = weeklyField ? r.__weekly : '';
+    const ptsVal = r.__total;
+
+    let trend = 'flat';
+    if(weeklyField){
+      const prevRank = prevRankMap[key];
+      if(prevRank !== undefined){
+        if(prevRank > rank) trend = 'up';
+        else if(prevRank < rank) trend = 'down';
+      }
+    }
+
+    const rowDiv = document.createElement('div');
+    const isDark = rank <= 3 ? true : (i % 2 === 0);
+    rowDiv.className = 'rowline ' + (isDark ? 'dark' : 'light');
+
+    const badge = document.createElement('div');
+    badge.className = 'badge ' + (rank === 1 ? 'b-gold' : rank === 2 ? 'b-silver' : rank === 3 ? 'b-bronze' : (isDark ? 'b-light' : 'b-navy'));
+    badge.textContent = rank;
+
+    const logoDiv = document.createElement('div');
+    logoDiv.className = 'team-logo';
+    logoDiv.title = 'Subir logo para ' + name;
+    logoDiv.innerHTML = state.playerLogos[key] ? '<img src="'+state.playerLogos[key]+'" alt="">' : '<span class="plus">+</span>';
+    const logoInput = document.createElement('input');
+    logoInput.type = 'file'; logoInput.accept = 'image/png,image/*'; logoInput.style.display = 'none';
+    logoInput.addEventListener('change', (e) => {
+      handleImageFile(e.target.files[0], (dataUrl) => {
+        state.playerLogos[key] = dataUrl;
+        buildPoster();
+        renderPlayerLogoList();
+        saveLogos();
+      });
+      e.target.value = '';
+    });
+    logoDiv.addEventListener('click', () => logoInput.click());
+
+    const nm = document.createElement('div');
+    nm.className = 'nm'; nm.contentEditable = 'true'; nm.spellcheck = false;
+    nm.textContent = name.toUpperCase();
+
+    const rd = document.createElement('div');
+    rd.className = 'rd'; rd.contentEditable = 'true'; rd.spellcheck = false;
+    rd.textContent = rdVal;
+
+    const ptsDiv = document.createElement('div');
+    ptsDiv.className = 'pts'; ptsDiv.contentEditable = 'true'; ptsDiv.spellcheck = false;
+    ptsDiv.textContent = ptsVal;
+
+    const arrow = document.createElement('div');
+    arrow.className = 'arrow';
+    arrow.title = 'Clic para cambiar (subida/bajada/igual)';
+    arrow.addEventListener('click', () => cycleArrow(arrow));
+    renderArrow(arrow, trend);
+
+    rowDiv.appendChild(badge);
+    rowDiv.appendChild(logoDiv);
+    rowDiv.appendChild(logoInput);
+    rowDiv.appendChild(nm);
+    rowDiv.appendChild(rd);
+    rowDiv.appendChild(ptsDiv);
+    rowDiv.appendChild(arrow);
+    container.appendChild(rowDiv);
+  });
+}
+
+function renderArrow(arrowEl, state){
+  arrowEl.dataset.state = state;
+  let svg = '';
+  if(state === 'up') svg = '<svg viewBox="0 0 20 20"><polygon points="10,3 18,16 2,16" fill="#3aa856"/></svg>';
+  else if(state === 'down') svg = '<svg viewBox="0 0 20 20"><polygon points="2,4 18,4 10,17" fill="#e0342a"/></svg>';
+  else svg = '<svg viewBox="0 0 20 20"><rect x="2" y="8.5" width="16" height="4" rx="1" fill="#f2d24b"/></svg>';
+  arrowEl.innerHTML = svg;
+}
+function cycleArrow(arrowEl){
+  const order = ['up','flat','down'];
+  const cur = arrowEl.dataset.state || 'flat';
+  const next = order[(order.indexOf(cur)+1) % order.length];
+  renderArrow(arrowEl, next);
+}
+
+/* ============================================================
+   EXPORT IMAGE
+   ============================================================ */
+async function exportImage(format){
+  const poster = el('poster');
+  document.activeElement && document.activeElement.blur();
+  const canvas = await html2canvas(poster, { scale: 3, backgroundColor: null, useCORS: true });
+  const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+  const quality = format === 'jpg' ? 0.95 : undefined;
+  const dataUrl = canvas.toDataURL(mime, quality);
+  const link = document.createElement('a');
+  const week = state.semana || 'semana';
+  link.download = 'fantasy-football-semana-' + week + '.' + (format === 'jpg' ? 'jpg' : 'png');
+  link.href = dataUrl;
+  link.click();
+}
+el('btnPng').addEventListener('click', () => exportImage('png'));
+el('btnJpg').addEventListener('click', () => exportImage('jpg'));
+
+/* ============================================================
+   INIT
+   ============================================================ */
+(async function init(){
+  await loadState();
+  el('leagueNameInput').value = state.leagueName || 'RAMIREZ Y AMIGOS';
+  el('leagueTagDisplay').textContent = (state.leagueName || 'RAMIREZ Y AMIGOS').toUpperCase();
+  el('semanaInput').value = state.semana || '1';
+  el('semanaNumDisplay').value = state.semana || '1';
+  el('urlCurrent').value = state.csvUrl || '';
+  renderNflLogo();
+  markSaved();
+  if(state.csvUrl){ await loadData(); }
+})();
+</script>
+
+</body>
+</html>
