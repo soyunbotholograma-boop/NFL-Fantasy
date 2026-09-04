@@ -5,7 +5,7 @@
 <title>Survivor League</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Oswald:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600;1,700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
 <style>
   :root{
     --field:#050816;
@@ -162,12 +162,19 @@
   /* Main table */
   #tableExportArea{
     --export-scale: 1;
+    position:relative;
     background:
       radial-gradient(ellipse 1100px 750px at 6% 96%, rgba(43,62,245,0.55) 0%, rgba(43,62,245,0) 62%),
       radial-gradient(ellipse 700px 500px at 100% 0%, rgba(20,26,80,0.65) 0%, rgba(0,0,0,0) 55%),
       linear-gradient(160deg, #050814 0%, #060a26 40%, #020308 78%, #000000 100%);
     border-radius:10px; padding:18px; overflow-x:auto;
   }
+  .table-watermark{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:60%; max-height:60%; object-fit:contain;
+    opacity:0.12; pointer-events:none; z-index:0;
+  }
+  #tableExportArea .title-block, #tableExportArea table.survivor{ position:relative; z-index:1; }
   #tableExportArea .title-block{ text-align:center; margin-bottom:14px; }
   #tableExportArea .title-block .table-logo{ width:46px; height:46px; object-fit:contain; margin:0 auto 8px; display:block; }
   #tableExportArea .title-block h2{ font-family:'Anton',sans-serif; font-weight:400; letter-spacing:1px; font-size:26px; margin:0; color:var(--gold);}
@@ -284,6 +291,13 @@
 
   ::-webkit-scrollbar{ height:8px; width:8px; }
   ::-webkit-scrollbar-thumb{ background:var(--gold-dim); border-radius:4px; }
+
+  /* Color por jugador (fila de la tabla y borde de la tarjeta) */
+  .row-color{ display:inline-flex; align-items:center; gap:4px; }
+  .row-color input[type=color]{ width:22px; height:22px; padding:0; border:1px solid var(--line); border-radius:5px; background:none; cursor:pointer; }
+  .row-color-reset{ width:16px; height:16px; line-height:16px; text-align:center; font-size:12px; border-radius:50%; border:none; cursor:pointer; background:var(--loss); color:#fff; padding:0; display:none; }
+  .row-color-reset.show{ display:inline-block; }
+  .player-card.has-custom-color{ border-left-width:4px; border-left-style:solid; }
 </style>
 </head>
 <body>
@@ -351,6 +365,7 @@
         </div>
       </div>
       <div id="tableExportArea">
+        <img id="tableWatermarkImg" class="table-watermark" alt="" style="display:none;">
         <div class="title-block">
           <img class="table-logo" id="tableLogoImg" style="display: block;" alt="Logo de la liga" src="data:image/svg+xml;base64,PHN2ZyBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGZpbGwtcnVsZT0iZXZlbm9kZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLW1pdGVybGltaXQ9IjIiIHZpZXdCb3g9IjAgMCAyNTAwIDI1MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbC1ydWxlPSJub256ZXJvIj48cGF0aCBkPSJtMjA1OS41OSAzMjQuMjg1Yy03NS4xODUgNTMuNjY1LTIxOC4xMSAxMjcuNDU1LTQwMi43MiA4MS45OS0zMTkuMzUtNzkuMDA1LTQxMC45MS0zNTQuMDM1LTQxMC45MS0zNTQuMDM1cy05MS41NiAyNzUuNzc1LTQxMC45MSAzNTQuMDM1Yy0xODQuNjEgNDUuNDY1LTMyNy41MzUtMjcuNTgtNDAyLjcyLTgxLjk5aC01Ny4zMnYxNDg1LjQ2YzAgMzcuMjY1IDguOTM1IDExMS44IDY5Ljk3NSAxODUuNTkgNzUuMTg1IDkxLjY3NSAyMDIuNDggMTUwLjU2IDM3OC45IDE3NS45IDE0MC42OSAyMC4xMjUgMjQ0LjE2NSA2NC44NDUgMzE3LjExNSAxMzQuOTA1IDUzLjU5NSA1Mi4xNzUgMTA0Ljk2IDE0MS42MTUgMTA0Ljk2IDE0MS42MTVzNTIuODU1LTkxLjY3NSAxMDQuOTYtMTQxLjYxNWM3Mi45NS03MC44MDUgMTc3LjE3LTExNC43ODUgMzE3LjExNS0xMzQuOTA1IDE3Ni40MjUtMjUuMzQgMzAzLjcxNS04NC45NyAzNzguOS0xNzUuOSA2MS4wNC03My43OSA2OS45NzUtMTQ4LjMyNSA2OS45NzUtMTg1LjU5di0xNDg1LjQ2eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Im0yMDY0LjggMzgyLjQycy0xNzQuOTM1IDEzNi40LTQyMC41OSA3NC41MzVjLTI4Ni41OTUtNzEuNTU1LTM5OC4yNTUtMjg2Ljk1NS0zOTguMjU1LTI4Ni45NTVzLTExMS42NiAyMTUuNDA1LTM5OC4yNTUgMjg2Ljk1NWMtMjQ1LjY1NSA2MS44NjUtNDIwLjU5LTc0LjUzNS00MjAuNTktNzQuNTM1djE0MjcuMzNjMCA0OC40NDUgMjAuMSAyNTQuMTYgNDA0LjIxIDMxMC4wNiAxNTEuODYgMjEuNjE1IDI2NS4wMSA3MC44MDUgMzQ2LjE0NSAxNDkuMDcgMjkuMDMgMjguMzI1IDUxLjM2NSA1Ni42NDUgNjguNDg1IDgyLjczNSAxNy4xMi0yNi4wODUgMzkuNDU1LTU1LjE1NSA2OC40ODUtODIuNzM1IDgxLjE0LTc4LjI2IDE5NC4yOS0xMjcuNDU1IDM0Ni4xNDUtMTQ5LjA3IDM4NC4xMS01NS45IDQwNC4yMS0yNjEuNjE1IDQwNC4yMS0zMTAuMDZ2LTE0MjcuMzN6IiBmaWxsPSIjMDEzMzY5Ii8+PHBhdGggZD0ibTEyNDUuOTUgMjIwNy4wMnMxMTEuNjYtMTM3LjE0NSA0MDAuNDktMTgxLjg2NWMzMzEuMjYtNTEuNDMgMzIxLjU4LTIwNy4yMDUgMzIxLjU4LTIxNC42NnYtNzQ4LjMyNWgtMTQ0NC44OHY3NDcuNThjMCA4LjItOS42NzUgMTYzLjk3NSAzMjEuNTggMjE0LjY2IDI4OS41NzUgNDQuNzIgNDAxLjIzNSAxODIuNjEgNDAxLjIzNSAxODIuNjF6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTkwOS40OCAxNjA4LjUxdi0zNTUuNTNsLTQ0LjY2NS0yNS4zNHYtOTIuNDJoMjAyLjQ4djkyLjQybC00Mi40MyAyNS4zNHY3MjUuMjE1bC0xMDguNjg1LTMyLjc5NS0xNTcuMDctNDYzLjZ2MzA1LjU5bDQ5Ljg3NSAzOC4wMXY5My45MTVsLTIxNy4zNjUtNTUuMTU1di04MC40OTVsNDkuODc1LTE5LjM4di01MTIuMDVsLTUwLjYyLTI0LjU5NXYtOTIuNDJoMTY0LjUxNXptMzcyLjk0NSAzMjQuOTcgNDMuMTc1IDUyLjE3NXY5Mi40MmwtMjE1Ljg3NS04MC40OTV2LTc4LjI2bDQ3LjY0LTE5LjM4di02NDYuMjFsLTQ3LjY0LTIzLjg1di05My4xN2gzNzQuNDM1djE4Ny44MjVoLTgyLjYzbC0yNS4zMS03Ni43N2gtOTUuMjg1djIxNi44OTVoNzEuNDY1bDI4LjI4NS00MC45OTVoNTcuMzJ2MTkxLjU1NWgtNTcuMzJsLTI2LjgtMzguNzZoLTcyLjk1djM1Ny4wMnptMjM4LjIxIDMyLjc5NXYtOTIuNDJsNTMuNTk1LTQzLjk3NXYtNTc2Ljg5NWwtNDUuNDEtMjMuODV2LTkzLjE3aDIxNS44NzV2OTMuMTdsLTQyLjQzIDIzLjg1djU0MS4xMmw5My4wNS0yNS4zNCAxNy44NjUtMTQxLjYxNWg4Ny44NHYyMzcuMDJsLTM4MC4zOSAxMDIuMTF6IiBmaWxsPSIjZDUwYTBhIi8+PHBhdGggZD0ibTU2MS4xIDkwOC42MzUtNjUuNTA1LTQ5LjE5NWg3OS42NWwyNi4wNTUtNzYuMDI1IDI2LjA1NSA3Ni4wMjVoNzkuNjVsLTY1LjUwNSA0OS4xOTUgMjMuODIgNzYuNzctNjQuNzY1LTQ1LjQ2NS02NC43NjUgNDUuNDY1em0yODMuNjIgMC02NS41MDUtNDkuMTk1aDc5LjY1bDI2LjA1NS03Ni4wMjUgMjYuMDU1IDc2LjAyNWg3OS42NWwtNjUuNTA1IDQ5LjE5NSAyMy44MiA3Ni43Ny02NC43NjUtNDUuNDY1LTY0Ljc2NSA0NS40NjV6bS0yODMuNjItMjU1LjY1LTY1LjUwNS00OS4xOTVoNzkuNjVsMjYuMDU1LTc2LjAyNSAyNi4wNTUgNzYuMDI1aDc5LjY1bC02NS41MDUgNDkuMTk1IDIzLjgyIDc2Ljc3LTY0Ljc2NS00NS40NjUtNjQuNzY1IDQ1LjQ2NXptMjgzLjYyIDAtNjUuNTA1LTQ5LjE5NWg3OS42NWwyNi4wNTUtNzYuMDI1IDI2LjA1NSA3Ni4wMjVoNzkuNjVsLTY1LjUwNSA0OS4xOTUgMjMuODIgNzYuNzctNjQuNzY1LTQ1LjQ2NS02NC43NjUgNDUuNDY1em0xMTA5LjkgMzMzLjE3LTY0Ljc2NS00NS40NjUtNjQuNzY1IDQ1LjQ2NSAyMy44Mi03Ni43Ny02NS41MDUtNDkuMTk1aDgwLjM5NWwyNi4wNTUtNzYuMDI1IDI2LjA1NSA3Ni4wMjVoNzkuNjVsLTY1LjUwNSA0OS4xOTV6bS0yODIuODc1IDAtNjQuNzY1LTQ1LjQ2NS02NC43NjUgNDUuNDY1IDIzLjgyLTc2Ljc3LTY1LjUwNS00OS4xOTVoNzkuNjVsMjYuMDU1LTc2LjAyNSAyNi4wNTUgNzYuMDI1aDc5LjY1bC02NS41MDUgNDkuMTk1em0yODIuODc1LTI1Ni40LTY0Ljc2NS00NS40NjUtNjQuNzY1IDQ1LjQ2NSAyMy44Mi03Ni43Ny02NS41MDUtNDkuMTk1aDgwLjM5NWwyNi4wNTUtNzYuMDI1IDI2LjA1NSA3Ni4wMjVoNzkuNjVsLTY1LjUwNSA0OS4xOTV6bS0yODIuODc1IDAtNjQuNzY1LTQ1LjQ2NS02NC43NjUgNDUuNDY1IDIzLjgyLTc2Ljc3LTY1LjUwNS00OS4xOTVoNzkuNjVsMjYuMDU1LTc2LjAyNSAyNi4wNTUgNzYuMDI1aDc5LjY1bC02NS41MDUgNDkuMTk1em0tMjQ1LjY1NS0yODIuNDg1YzYuNy0uNzQ1IDEwLjQyIDcuNDU1IDE0LjE0NSAxMi42NyAyOC4yODUgNzEuNTU1IDM1LjczIDE1OC43NiAxNC4xNDUgMjQyLjIzNS0zMi43NTUgMTI3LjQ1NS0xMzkuOTUgMjQ0LjQ3LTM2OS45NyAyNzQuMjg1LTUuMjEuNzQ1LTExLjE2NS0uNzQ1LTExLjkxLTMuNzI1IDEwLjQyLTQ4LjQ0NSAzNi40NzUtMTQwLjg3IDkyLjMwNS0yMzguNTEgMTAuNDIgNi43MSAyMC44NDUgMTMuNDE1IDMwLjUyIDIwLjg3IDMuNzItNS45NjUgOC4xOS0xMi42NyAxNC44OS0yMy44NS0yOC4yODUtMjIuMzYtNjEuMDQtMzguMDEtOTcuNTE1LTQ0LjcyIDAgMC02LjcgMTQuMTYtMTEuOTEgMjQuNTk1IDAgMCAxNC4xNDUgMi45OCAzMS4yNjUgOC45NDUtNDkuODc1IDEwNS44NC02Ni45OTUgMjA0LjIyNS03MS40NjUgMjQ4Ljk0NS0xNC4xNDUtMjIuMzYtMjUuMzEtNzQuNTM1LTI5LjAzLTEwMi44NTUtMzYuNDc1LTI2OC4zMjUgMTU2LjMyNS00MjQuODQ1IDM2Ni4yNDUtNDI3LjgyNSAxNC4xNDUtLjc0NSAxOS4zNTUgMi4yMzUgMTkuMzU1IDIuMjM1cy00Ni4xNTUgMTcuMTQ1LTk5Ljc1IDU4LjEzNWMwIDAtMTIuNjU1LTUuMjE1LTI2LjA1NS04Ljk0NS04LjE5IDUuMjE1LTE3LjEyIDExLjE4LTI1LjMxIDE3LjE0NSAyNS4zMSA1Ljk2NSA1Ny4zMiAxOC42MzUgODcuODQgNDMuOTc1IDYuNy01Ljk2NSAxMy40LTEyLjY3IDIwLjg0NS0xOS4zOC03LjQ0NS01Ljk2NS0xOS4zNTUtMTQuMTYtMjkuNzc1LTIwLjEyNSA0Ny42NC00Ni4yMSA4MS4xNC02NC4xIDgxLjE0LTY0LjF6bS0xOTguMDEgMjUzLjQxNWM1LjIxLTcuNDU1IDExLjE2NS0xNi40IDE3LjEyLTI1LjM0LTIzLjgyLTIwLjEyNS01OC4wNjUtMzkuNTA1LTk5Ljc1LTQ3LjctNS45NTUgOC45NDUtMTYuMzc1IDI2LjA4NS0xNi4zNzUgMjYuMDg1IDM0LjI0NSA2LjcxIDY5LjIzIDIyLjM2IDk5LjAwNSA0Ni45NTV6bTM3Ljk2NS01Mi45MmM1Ljk1NS04LjIgMTEuOTEtMTUuNjUgMTguNjEtMjMuODUtMzIuNzU1LTI2LjgzLTY5Ljk3NS00Mi40ODUtOTkuMDA1LTQ3LjctNi43IDcuNDU1LTEzLjQgMTUuNjUtMTkuMzU1IDIzLjEwNSAzNy45NjUgNy40NTUgNzIuMjA1IDI1LjM0IDk5Ljc1IDQ4LjQ0NXptNDIuNDMtNTAuNjg1YzUuOTU1LTcuNDU1IDEyLjY1NS0xNC4xNiAyMC44NDUtMjEuNjE1LTIwLjEtMTYuNC00OS4xMy0zNS43NzUtOTIuMzA1LTQ2LjIxLTcuNDQ1IDUuOTY1LTE2LjM3NSAxMi42Ny0yNC41NjUgMjAuODcgMzQuMjQ1IDcuNDU1IDY2Ljk5NSAyMy4xMDUgOTYuMDMgNDYuOTU1eiIgZmlsbD0iI2ZmZiIvPjwvZz48L3N2Zz4=">
           <h2>SURVIVOR LEAGUE</h2>
@@ -552,7 +567,7 @@
         <button class="btn" id="btnAddPlayer">Agregar jugador</button>
       </div>
       <table class="list" id="playersList">
-        <thead><tr><th>Jugador</th><th>Vidas iniciales</th><th>Vidas actuales</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Jugador</th><th>Vidas iniciales</th><th>Vidas actuales</th><th>Estado</th><th>Color</th><th></th></tr></thead>
         <tbody><tr>
       <td>Alfredo</td>
       <td><input type="number" min="0" value="3" style="width:70px;" data-lives="p0_1786070347942"></td>
@@ -681,6 +696,39 @@
         </label>
       </div>
       <p class="empty-note">Sube el PNG de cada equipo (idealmente fondo transparente, cuadrado, ~200×200px). Se guarda dentro de este mismo archivo, no necesitas subirlo a ningún otro lado.</p>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;">
+      <label style="display:block;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Fondo de la tabla <span style="text-transform:none;font-weight:400;color:var(--chalk-dim);">(marca de agua, opcional)</span></label>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="logo-tile" style="width:140px;">
+          <div class="lt-preview" id="tableWatermarkPreview"><span class="lt-empty">Sin imagen</span></div>
+          <div class="lt-actions">
+            <label class="btn ghost small" style="cursor:pointer;">Subir<input type="file" id="tableWatermarkInput" accept="image/png,image/*" style="display:none;"></label>
+            <button class="btn danger small" id="btnRemoveTableWatermark" style="display:none;">Quitar</button>
+          </div>
+        </div>
+        <div style="flex:1;min-width:180px;">
+          <label style="display:block;font-size:11px;color:var(--chalk-dim);margin-bottom:4px;">Opacidad</label>
+          <input type="range" id="tableWatermarkOpacity" min="0.05" max="0.4" step="0.01" value="0.12" style="width:100%;">
+        </div>
+      </div>
+      <p class="empty-note">Se muestra centrada y tenue detrás de la Tabla General, tanto en pantalla como al exportarla como PNG.</p>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;">
+      <label style="display:block;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Sincronización en la nube <span style="text-transform:none;font-weight:400;color:var(--chalk-dim);">(opcional, jsonbin.io)</span></label>
+      <div class="toolbar">
+        <div class="group">
+          <input type="text" id="jsonbinId" placeholder="Bin ID">
+          <input type="text" id="jsonbinKey" placeholder="Access Key del bin" style="min-width:220px;">
+        </div>
+        <div class="group">
+          <button class="btn ghost small" id="btnJsonbinUpload">Subir a la nube</button>
+          <button class="btn ghost small" id="btnJsonbinDownload">Bajar de la nube</button>
+        </div>
+      </div>
+      <p class="empty-note">Usa una <b>Access Key limitada a este bin</b> (no la Master Key de tu cuenta) — se ve en el código fuente de este archivo. Créala en jsonbin.io &gt; API Keys. Sin bin todavía no pasa nada: esto queda inactivo hasta que pegues un Bin ID y una Access Key aquí, y la sincronización siempre es manual.</p>
+      <div class="save-status" id="jsonbinStatus"></div>
+
       <div class="logos-grid" id="logosGrid">
       <div class="logo-tile">
         <div class="lt-abbr">ARI · Cardinals</div>
@@ -1236,11 +1284,12 @@ const DEFAULT_NAMES = ['Alfredo','Samuel','Paola','Jonatan','Oscar M','Oscar I',
 function defaultState(){
   return {
     startingLivesDefault: 3,
-    players: DEFAULT_NAMES.map((n,i)=>({ id:'p'+i+'_'+Date.now(), name:n, startingLives:3, picks:{} })),
+    players: DEFAULT_NAMES.map((n,i)=>({ id:'p'+i+'_'+Date.now(), name:n, startingLives:3, picks:{}, rowColor:null })),
     results: {}, // weekKey -> [teamAbbr,...] (teams that lost)
     showLogos: false,
     teamLogos: {}, // teamAbbr -> base64 PNG data URL, e.g. teamLogos.BAL = 'data:image/png;base64,....'
-    leagueLogo: null // base64 PNG data URL del logo de la liga (opcional)
+    leagueLogo: null, // base64 PNG data URL del logo de la liga (opcional)
+    tableWatermark: { image: null, opacity: 0.12 } // marca de agua centrada detrás de la Tabla General
   };
 }
 
@@ -1271,13 +1320,14 @@ function hasLocalStorage(){
 /* El bucket de "logos" guarda el escudo por equipo Y el logo de la liga juntos,
    porque ambos son im\u00e1genes pesadas que conviene escribir aparte de los datos ligeros. */
 function logosPayload(){
-  return JSON.stringify({ teamLogos: state.teamLogos, leagueLogo: state.leagueLogo || null });
+  return JSON.stringify({ teamLogos: state.teamLogos, leagueLogo: state.leagueLogo || null, tableWatermark: state.tableWatermark || { image:null, opacity:0.12 } });
 }
 function applyLogosPayload(raw){
   const parsed = JSON.parse(raw);
   if(parsed && typeof parsed==='object' && !Array.isArray(parsed) && ('teamLogos' in parsed || 'leagueLogo' in parsed)){
     if(parsed.teamLogos) state.teamLogos = parsed.teamLogos;
     if(parsed.leagueLogo) state.leagueLogo = parsed.leagueLogo;
+    if(parsed.tableWatermark) state.tableWatermark = parsed.tableWatermark;
   } else if(parsed){
     // formato anterior: la llave guardaba directamente el mapa de escudos por equipo
     state.teamLogos = parsed;
@@ -1496,11 +1546,15 @@ function renderMainTable(weeksToShow, playersToShow){
     const out = isOut(p);
     const lives = currentLives(p);
     const start = p.startingLives ?? state.startingLivesDefault;
-    html += `<tr class="${out?'out-row':''}">`;
-    html += `<td class="namecell">${escapeHtml(p.name)}</td>`;
+    const rowBg = p.rowColor || null;
+    const rowText = rowBg ? pickTextColor(rowBg) : null;
+    const rowStyle = rowBg ? ` style="background:${rowBg};color:${rowText};"` : '';
+    const cellStyle = rowBg ? ` style="background:${rowBg};color:${rowText};"` : '';
+    html += `<tr class="${out?'out-row':''}"${rowStyle}>`;
+    html += `<td class="namecell"${cellStyle}>${escapeHtml(p.name)}</td>`;
     let pips = '';
     for(let i=0;i<start;i++) pips += `<span class="pip ${i<lives?'on':''}"></span>`;
-    html += `<td class="livescell"><span class="lives-pips">${pips}</span></td>`;
+    html += `<td class="livescell"${cellStyle}><span class="lives-pips">${pips}</span></td>`;
     weeks.forEach(w=>{
       const pick = p.picks[w.key];
       const st = weekStatus(p, w.key);
@@ -1605,6 +1659,12 @@ function renderPlayersList(){
       <td><input type="number" min="0" value="${p.startingLives ?? state.startingLivesDefault}" style="width:70px;" data-lives="${p.id}"></td>
       <td>${currentLives(p)}</td>
       <td><span class="badge ${out?'out':'alive'}">${out?'Eliminado':'Vivo'}</span></td>
+      <td>
+        <span class="row-color">
+          <input type="color" value="${p.rowColor || '#2b3ef5'}" data-row-color="${p.id}" title="Color de esta fila">
+          <button type="button" class="row-color-reset${p.rowColor ? ' show' : ''}" data-row-color-reset="${p.id}" title="Quitar color personalizado">&times;</button>
+        </span>
+      </td>
       <td><button class="btn danger small" data-remove="${p.id}">Quitar</button></td>
     `;
     tbody.appendChild(tr);
@@ -1613,6 +1673,22 @@ function renderPlayersList(){
     inp.addEventListener('change', ()=>{
       const player = state.players.find(pl=>pl.id===inp.dataset.lives);
       player.startingLives = Math.max(0, parseInt(inp.value)||0);
+      saveState();
+      renderAll();
+    });
+  });
+  tbody.querySelectorAll('[data-row-color]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const player = state.players.find(pl=>pl.id===inp.dataset.rowColor);
+      player.rowColor = inp.value;
+      saveState();
+      renderAll();
+    });
+  });
+  tbody.querySelectorAll('[data-row-color-reset]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const player = state.players.find(pl=>pl.id===btn.dataset.rowColorReset);
+      player.rowColor = null;
       saveState();
       renderAll();
     });
@@ -1631,7 +1707,7 @@ document.getElementById('btnAddPlayer').addEventListener('click', ()=>{
   const livesInp = document.getElementById('newPlayerLives');
   const name = nameInp.value.trim();
   if(!name) return;
-  state.players.push({ id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), name, startingLives: parseInt(livesInp.value)||3, picks:{} });
+  state.players.push({ id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), name, startingLives: parseInt(livesInp.value)||3, picks:{}, rowColor:null });
   nameInp.value=''; livesInp.value='3';
   saveState();
   renderAll();
@@ -1721,6 +1797,47 @@ document.getElementById('btnRemoveLeagueLogo').addEventListener('click', ()=>{
   renderLeagueLogo();
 });
 
+/* ---------------- RENDER: FONDO/MARCA DE AGUA DE LA TABLA ---------------- */
+function renderTableWatermark(){
+  const wm = state.tableWatermark || { image: null, opacity: 0.12 };
+  const preview = document.getElementById('tableWatermarkPreview');
+  const img = document.getElementById('tableWatermarkImg');
+  const removeBtn = document.getElementById('btnRemoveTableWatermark');
+  preview.innerHTML = wm.image ? `<img src="${wm.image}" alt="">` : '<span class="lt-empty">Sin imagen</span>';
+  if(wm.image){
+    img.src = wm.image;
+    img.style.display = 'block';
+    img.style.opacity = wm.opacity;
+    removeBtn.style.display = 'inline-flex';
+  } else {
+    img.style.display = 'none';
+    removeBtn.style.display = 'none';
+  }
+  document.getElementById('tableWatermarkOpacity').value = wm.opacity;
+}
+document.getElementById('tableWatermarkInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    state.tableWatermark.image = reader.result;
+    saveLogos();
+    renderTableWatermark();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+document.getElementById('btnRemoveTableWatermark').addEventListener('click', ()=>{
+  state.tableWatermark.image = null;
+  saveLogos();
+  renderTableWatermark();
+});
+document.getElementById('tableWatermarkOpacity').addEventListener('input', ()=>{
+  state.tableWatermark.opacity = parseFloat(document.getElementById('tableWatermarkOpacity').value) || 0.12;
+  document.getElementById('tableWatermarkImg').style.opacity = state.tableWatermark.opacity;
+  saveLogos();
+});
+
 /* ---------------- RENDER: CARDS TAB ---------------- */
 function renderCardsTab(){
   const grid = document.getElementById('cardsGrid');
@@ -1741,8 +1858,9 @@ function renderCardsTab(){
       return `<span class="cell-pick ${cls}" title="${w.label}">${shortWk}: ${pick}</span>`;
     }).join('');
     const card = document.createElement('div');
-    card.className = 'player-card' + (out?' out':'');
+    card.className = 'player-card' + (out?' out':'') + (p.rowColor?' has-custom-color':'');
     card.id = 'card-'+p.id;
+    if(p.rowColor) card.style.borderLeftColor = p.rowColor;
     let pips = '';
     for(let i=0;i<start;i++) pips += `<span class="pc-pip ${i<lives?'':'off'}"></span>`;
     card.innerHTML = `
@@ -1902,6 +2020,16 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+/* Contraste automático: igual criterio que en fantasy_standings.html, elige texto
+   blanco o negro según qué tan clara sea la fila con color personalizado. */
+function pickTextColor(hex){
+  const h = (hex || '').replace('#', '');
+  if(h.length !== 6) return '#f4f5fb';
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return luminance > 0.6 ? '#050816' : '#f4f5fb';
+}
+
 /* ---------------- MASTER RENDER ---------------- */
 function renderAll(){
   renderScoreboard();
@@ -1912,11 +2040,105 @@ function renderAll(){
   renderLogosTab();
   renderCardsTab();
   renderLeagueLogo();
+  renderTableWatermark();
   renderStorageNote();
 }
 
 document.getElementById('pickWeekSelect').addEventListener('change', renderPicksTab);
 document.getElementById('resWeekSelect').addEventListener('change', renderResultsTab);
+
+/* ---------------- CLOUD SYNC (jsonbin.io, opcional) ----------------
+   Misma idea que en fantasy_standings.html: infraestructura lista para cuando tengas
+   un bin, credenciales solo en localStorage (nunca en "Guardar archivo"), y sincronización
+   100% manual con dos botones — jsonbin no bloquea escrituras concurrentes, así que un
+   sync automático en segundo plano podría pisar los datos de otro jugador sin avisar. */
+const JSONBIN_CFG_KEY = 'survivor-league-jsonbin-config';
+function loadJsonbinConfig(){
+  try{
+    const raw = localStorage.getItem(JSONBIN_CFG_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { binId: '', accessKey: '' };
+}
+function saveJsonbinConfig(){
+  try{
+    localStorage.setItem(JSONBIN_CFG_KEY, JSON.stringify({
+      binId: document.getElementById('jsonbinId').value.trim(),
+      accessKey: document.getElementById('jsonbinKey').value.trim()
+    }));
+  }catch(e){}
+}
+function setJsonbinStatus(msg, isErr){
+  const box = document.getElementById('jsonbinStatus');
+  box.textContent = msg;
+  box.className = 'save-status ' + (isErr ? 'warn' : 'ok');
+}
+async function jsonbinGet(binId, accessKey){
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + encodeURIComponent(binId) + '/latest', {
+    headers: { 'X-Access-Key': accessKey }
+  });
+  if(!res.ok){
+    if(res.status === 401 || res.status === 403) throw new Error('jsonbin rechazó el Access Key (HTTP ' + res.status + '). Revisa que sea el correcto para este bin.');
+    if(res.status === 404) throw new Error('No se encontró ese Bin ID (HTTP 404). Revisa que esté bien copiado.');
+    throw new Error('jsonbin respondió con error (HTTP ' + res.status + ')');
+  }
+  const json = await res.json();
+  return json.record;
+}
+async function jsonbinPut(binId, accessKey, data){
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + encodeURIComponent(binId), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Access-Key': accessKey },
+    body: JSON.stringify(data)
+  });
+  if(!res.ok){
+    if(res.status === 401 || res.status === 403) throw new Error('jsonbin rechazó el Access Key (HTTP ' + res.status + '). Revisa que sea el correcto para este bin.');
+    if(res.status === 404) throw new Error('No se encontró ese Bin ID (HTTP 404). Revisa que esté bien copiado.');
+    throw new Error('jsonbin respondió con error (HTTP ' + res.status + ')');
+  }
+}
+document.getElementById('jsonbinId').addEventListener('change', saveJsonbinConfig);
+document.getElementById('jsonbinKey').addEventListener('change', saveJsonbinConfig);
+document.getElementById('btnJsonbinUpload').addEventListener('click', async () => {
+  const binId = document.getElementById('jsonbinId').value.trim();
+  const accessKey = document.getElementById('jsonbinKey').value.trim();
+  if(!binId || !accessKey){ setJsonbinStatus('Falta el Bin ID o el Access Key.', true); return; }
+  saveJsonbinConfig();
+  const btn = document.getElementById('btnJsonbinUpload');
+  btn.disabled = true;
+  try{
+    await jsonbinPut(binId, accessKey, state);
+    setJsonbinStatus('Datos subidos a jsonbin correctamente.', false);
+  }catch(err){
+    setJsonbinStatus('Error: ' + err.message, true);
+  }finally{
+    btn.disabled = false;
+  }
+});
+document.getElementById('btnJsonbinDownload').addEventListener('click', async () => {
+  const binId = document.getElementById('jsonbinId').value.trim();
+  const accessKey = document.getElementById('jsonbinKey').value.trim();
+  if(!binId || !accessKey){ setJsonbinStatus('Falta el Bin ID o el Access Key.', true); return; }
+  if(!confirm('Esto reemplaza tus jugadores, resultados, escudos y colores locales con lo que esté guardado en la nube. ¿Continuar?')) return;
+  saveJsonbinConfig();
+  const btn = document.getElementById('btnJsonbinDownload');
+  btn.disabled = true;
+  try{
+    const remote = await jsonbinGet(binId, accessKey);
+    if(!remote || typeof remote !== 'object' || !remote.players) throw new Error('El bin no contiene datos válidos.');
+    state = Object.assign(defaultState(), remote);
+    await saveState();
+    await saveLogos();
+    populateWeekSelects();
+    renderAll();
+    markSaved();
+    setJsonbinStatus('Datos bajados de jsonbin correctamente.', false);
+  }catch(err){
+    setJsonbinStatus('Error: ' + err.message, true);
+  }finally{
+    btn.disabled = false;
+  }
+});
 
 /* ---------------- INIT ---------------- */
 (async function init(){
@@ -1924,6 +2146,9 @@ document.getElementById('resWeekSelect').addEventListener('change', renderResult
   populateWeekSelects();
   renderAll();
   markSaved();
+  const jsonbinCfg = loadJsonbinConfig();
+  document.getElementById('jsonbinId').value = jsonbinCfg.binId || '';
+  document.getElementById('jsonbinKey').value = jsonbinCfg.accessKey || '';
 })();
 </script>
 

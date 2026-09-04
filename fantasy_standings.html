@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fantasy Football — Resultados Semanales</title>
+<title>Fantasy Standings — Resultados Semanales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
 <style>
   :root{
     --field:#050814;
@@ -113,13 +113,24 @@
   /* ---------- POSTER ---------- */
   .stage{display:flex;justify-content:center;}
   #poster{
-    width:680px;
+    width:460px;
     background:
       radial-gradient(ellipse 900px 620px at 4% 100%, rgba(43,62,245,0.35) 0%, rgba(43,62,245,0) 60%),
       linear-gradient(165deg, #060a26 0%, #050814 55%, #000 100%);
     position:relative;overflow:hidden;
     box-shadow:0 10px 30px rgba(0,0,0,0.3);font-family:'Oswald', sans-serif;
   }
+  #poster.layout-columns{ width:800px; }
+
+  /* ---------- layout toggle (control panel only) ---------- */
+  .layout-toggle{display:flex;gap:8px;}
+  .layout-opt{
+    flex:1;padding:9px 6px;border-radius:8px;border:1.5px solid rgba(150,165,255,0.22);
+    background:rgba(255,255,255,0.05);color:var(--chalk-dim);
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:0.3px;
+    cursor:pointer;text-transform:uppercase;
+  }
+  .layout-opt.active{background:linear-gradient(100deg, var(--blue) 0%, var(--purple) 100%);color:#fff;border-color:transparent;}
 
   /* Banner */
   .banner{
@@ -174,29 +185,46 @@
 
   /* Column header */
   .col-header{
-    display:grid;
-    grid-template-columns:48px 40px 1fr 48px 56px 40px;
     align-items:center;
-    padding:14px 22px 8px;
+    padding:12px 16px 6px;
     position:relative; z-index:1;
   }
-  .col-header span{font-weight:600;font-size:11.5px;letter-spacing:1.5px;color:var(--chalk-dim);text-transform:uppercase;}
-  .col-header .c-rd, .col-header .c-pts, .col-header .c-logo{text-align:center;}
+  .col-header span{font-weight:600;letter-spacing:1.2px;color:var(--chalk-dim);text-transform:uppercase;}
+  .col-header .c-rd, .col-header .c-elo, .col-header .c-pts, .col-header .c-logo{text-align:center;}
 
-  .rows{position:relative; z-index:1; padding:0 22px 22px;}
+  #poster.layout-list .col-header{ display:grid; grid-template-columns:26px 24px 1fr 30px 36px 42px 18px 24px; font-size:9.5px; }
+  #poster.layout-columns .col-header{ display:none; }
+
+  .rows{position:relative; z-index:1; padding:0 16px 16px;}
   .rowline{
-    display:grid;
-    grid-template-columns:48px 40px 1fr 48px 56px 40px;
     align-items:center;
-    min-height:44px;
-    margin-bottom:6px;
     border-radius:4px;
     position:relative;
+  }
+  #poster.layout-list .rowline{
+    display:grid;
+    grid-template-columns:26px 24px 1fr 30px 36px 42px 18px 24px;
+    min-height:30px;
+    margin-bottom:4px;
+  }
+  .rows-2col{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;}
+  .col-block .col-mini-header{
+    font-weight:600;font-size:9px;letter-spacing:1.2px;color:var(--chalk-dim);
+    text-transform:uppercase;padding:0 4px 5px;
+  }
+  #poster.layout-columns .rowline{
+    display:grid;
+    grid-template-columns:20px 1fr 22px 24px 28px 14px 18px;
+    min-height:24px;
+    margin-bottom:3px;
+    padding:0 4px;
   }
   .rowline.dark{background:var(--panel);}
   .rowline.light{background:rgba(244,245,251,0.94);}
 
-  .badge{width:32px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border-radius:4px;margin-left:8px;color:var(--field);}
+  .badge{display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px;color:var(--field);}
+  #poster.layout-list .badge{width:22px;height:20px;font-size:10.5px;margin-left:4px;}
+  #poster.layout-columns .badge{width:17px;height:16px;font-size:9px;margin-left:2px;}
   .badge.b-gold{background:var(--gold);}
   .badge.b-silver{background:var(--silver);}
   .badge.b-bronze{background:var(--bronze);color:#fff;}
@@ -205,28 +233,82 @@
   .rowline.light .badge.b-light{background:#e4e6ea;color:var(--field);}
 
   .team-logo{
-    width:28px;height:28px;border-radius:6px;justify-self:center;
+    width:20px;height:20px;border-radius:5px;justify-self:center;
     display:flex;align-items:center;justify-content:center;overflow:hidden;
     background:rgba(255,255,255,0.06);cursor:pointer;
   }
   .rowline.light .team-logo{background:#e4e6ea;}
   .team-logo img{width:100%;height:100%;object-fit:contain;}
-  .team-logo .plus{font-size:13px;color:rgba(255,255,255,0.35);}
+  .team-logo .plus{font-size:10px;color:rgba(255,255,255,0.35);}
   .rowline.light .team-logo .plus{color:#b7bcc4;}
 
-  .nm{font-weight:600;font-size:14px;letter-spacing:0.3px;text-transform:uppercase;padding-left:10px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .nm{font-weight:600;letter-spacing:0.2px;text-transform:uppercase;padding-left:8px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #poster.layout-list .nm{font-size:11px;}
+  #poster.layout-columns .nm{font-size:9px;padding-left:5px;}
   .rowline.dark .nm{color:#fff;}
   .rowline.light .nm{color:var(--field);}
 
-  .rd, .pts{text-align:center;font-weight:600;font-size:13.5px;outline:none;}
-  .rowline.dark .rd, .rowline.dark .pts{color:#dfe3e8;}
-  .rowline.light .rd, .rowline.light .pts{color:var(--field);}
-  .pts{font-weight:700;font-size:14.5px;}
+  .rd, .elo, .pts{text-align:center;font-weight:600;outline:none;font-variant-numeric:tabular-nums;}
+  #poster.layout-list .rd, #poster.layout-list .elo{font-size:10px;}
+  #poster.layout-list .pts{font-weight:700;font-size:11.5px;}
+  #poster.layout-columns .rd, #poster.layout-columns .elo{font-size:8.5px;}
+  #poster.layout-columns .pts{font-weight:700;font-size:9.5px;}
+  .rowline.dark .rd, .rowline.dark .elo, .rowline.dark .pts{color:#dfe3e8;}
+  .rowline.light .rd, .rowline.light .elo, .rowline.light .pts{color:var(--field);}
 
-  .arrow{justify-self:center;width:18px;height:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-  .arrow svg{width:15px;height:15px;}
+  .arrow{justify-self:center;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  #poster.layout-list .arrow{width:16px;height:16px;}
+  #poster.layout-list .arrow svg{width:13px;height:13px;}
+  #poster.layout-columns .arrow{width:12px;height:12px;}
+  #poster.layout-columns .arrow svg{width:9px;height:9px;}
+
+  .row-color{justify-self:center;display:flex;align-items:center;gap:2px;}
+  .row-color input[type=color]{width:18px;height:18px;padding:0;border:1px solid rgba(150,165,255,0.35);border-radius:4px;background:none;cursor:pointer;}
+  .row-color .row-color-reset{width:14px;height:14px;line-height:14px;text-align:center;font-size:11px;border-radius:50%;border:none;cursor:pointer;background:rgba(224,52,42,0.85);color:#fff;padding:0;display:none;}
+  .row-color .row-color-reset.show{display:block;}
 
   .empty-msg{padding:40px 22px;text-align:center;color:var(--chalk-dim);font-size:13px;position:relative;z-index:1;}
+
+  /* ---------- team-crest picker (reads logos saved by survivor-league_new.html) ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(3,4,12,0.72); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-box{
+    width:100%; max-width:420px; max-height:82vh; overflow-y:auto;
+    background:linear-gradient(165deg, #131a44 0%, #0b1030 60%, #070a22 100%);
+    border:1px solid rgba(150,165,255,0.2); border-radius:14px; padding:18px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.45);
+  }
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .modal-head h3{margin:0;font-size:15px;color:var(--chalk);}
+  .modal-close{background:none;border:none;color:var(--chalk-dim);font-size:20px;line-height:1;cursor:pointer;padding:2px 4px;}
+  .modal-close:hover{color:var(--chalk);}
+  #teamPickerSearch{
+    width:100%;padding:9px 10px;border:1.5px solid rgba(150,165,255,0.22);border-radius:8px;
+    font-size:13px;font-family:inherit;background:rgba(255,255,255,0.05);color:var(--chalk);margin-bottom:12px;
+  }
+  #teamPickerSearch::placeholder{color:#6d76a8;}
+  .team-picker-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(78px,1fr));gap:8px;}
+  .team-pick-tile{
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+    background:rgba(255,255,255,0.05);border:1px solid rgba(150,165,255,0.16);border-radius:8px;
+    padding:8px 4px;cursor:pointer;font-family:'Oswald',sans-serif;
+  }
+  .team-pick-tile:hover:not(:disabled){border-color:var(--purple);background:rgba(255,255,255,0.09);}
+  .team-pick-tile:disabled{opacity:0.35;cursor:not-allowed;}
+  .team-pick-tile img{width:30px;height:30px;object-fit:contain;}
+  .team-pick-tile .tp-abbr{font-weight:700;font-size:13px;letter-spacing:0.5px;}
+  .team-pick-tile .tp-name{font-size:9.5px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:0.3px;text-align:center;}
+  .modal-foot{display:flex;gap:8px;margin-top:12px;}
+  .modal-foot .btn{flex:1;font-size:11.5px;padding:9px 6px;}
+
+  .poster-watermark{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:70%; max-height:70%; object-fit:contain;
+    opacity:0.12; pointer-events:none; z-index:0;
+  }
 </style>
 </head>
 <body>
@@ -238,7 +320,7 @@
 
   <!-- ============ CONTROL PANEL (not exported) ============ -->
   <div class="panel" id="panel">
-    <h1>Generador de Resultados</h1>
+    <h1>Generador de Fantasy Standings</h1>
     <p class="sub">Configura el link de tu Google Sheet, tu logo y los logos de cada jugador una sola vez — quedan guardados en este navegador. Cada semana solo abres el archivo, pones el número de semana y descargas.</p>
 
     <div class="field">
@@ -255,7 +337,27 @@
       <input type="file" id="nflLogoInput" accept="image/png,image/*" style="display:none">
     </div>
 
+    <div class="field">
+      <label>Fondo del póster <span class="opt">(marca de agua, opcional)</span></label>
+      <div class="nfl-logo-row">
+        <div class="logo-slot" id="watermarkSlot"><span class="plus">+</span></div>
+        <div class="txt">Se muestra centrada y tenue detrás de las filas, en pantalla y al exportar.<br><button class="prm" id="btnRemoveWatermark" style="border:none;background:none;color:#ff9d95;font-size:11px;cursor:pointer;padding:2px 0;">Quitar</button></div>
+      </div>
+      <input type="file" id="watermarkInput" accept="image/png,image/*" style="display:none">
+      <label style="margin-top:8px;display:block;font-size:11px;color:#7c85b8;">Opacidad</label>
+      <input type="range" id="watermarkOpacity" min="0.05" max="0.4" step="0.01" value="0.12" style="width:100%;">
+    </div>
+
     <hr class="divider">
+
+    <div class="field">
+      <label>Diseño del póster <span class="opt">(para que se lea bien en el celular)</span></label>
+      <div class="layout-toggle" id="layoutToggle">
+        <button type="button" class="layout-opt" data-mode="list">Lista compacta</button>
+        <button type="button" class="layout-opt" data-mode="columns">Dos columnas</button>
+      </div>
+      <div class="hint">Lista compacta: una sola columna, más alta. Dos columnas: divide el ranking a la mitad para una imagen más cuadrada y legible en pantalla de celular.</div>
+    </div>
 
     <div class="field">
       <label>Semana (número)</label>
@@ -271,6 +373,9 @@
     <button class="btn btn-primary" id="btnFetch">Actualizar datos</button>
     <div class="status" id="statusBox"></div>
 
+    <button class="btn btn-download" id="btnApplyPoster" style="display:none;margin-top:10px;">Actualizar póster</button>
+    <div class="hint" id="applyPosterHint" style="display:none;">Los datos se cargaron pero el póster no cambia hasta que hagas clic aquí — así puedes revisar el CSV antes de aplicarlo.</div>
+
     <details class="advanced" id="advancedWrap" style="display:none">
       <summary>Mapeo de columnas (avanzado)</summary>
       <div class="field">
@@ -284,6 +389,10 @@
       <div class="field">
         <label>Columna → Puntos de esta semana (Rd)</label>
         <select id="mapWeekly"></select>
+      </div>
+      <div class="field">
+        <label>Columna → Elo <span class="opt">(opcional)</span></label>
+        <select id="mapElo"></select>
       </div>
       <button class="btn btn-ghost" id="btnBuild">Actualizar póster</button>
     </details>
@@ -308,11 +417,33 @@
       <div class="hint">Guarda un .html con tu logo, link y logos de jugadores ya incluidos — útil para compartir esta herramienta ya lista, o como respaldo.</div>
       <div class="save-status" id="saveStatus"></div>
     </div>
+
+    <hr class="divider">
+
+    <details class="advanced">
+      <summary>Sincronización en la nube (opcional)</summary>
+      <div class="field">
+        <label>Bin ID</label>
+        <input type="text" id="jsonbinId" placeholder="p.ej. 660f2a1c...">
+      </div>
+      <div class="field">
+        <label>Access Key</label>
+        <input type="text" id="jsonbinKey" placeholder="X-Access-Key del bin (no la Master Key de la cuenta)">
+        <div class="hint">Usa una <b>Access Key limitada a este bin</b>, no tu Master Key de cuenta — cualquiera que vea el código fuente de este archivo podría leerla. Créala en jsonbin.io &gt; API Keys.</div>
+      </div>
+      <div class="download-row">
+        <button class="btn btn-ghost" id="btnJsonbinUpload">Subir a la nube</button>
+        <button class="btn btn-ghost" id="btnJsonbinDownload">Bajar de la nube</button>
+      </div>
+      <div class="hint">Sin bin todavía no pasa nada — esto queda inactivo hasta que crees uno en jsonbin.io y pegues el Bin ID y la Access Key aquí. La sincronización es manual, nunca automática.</div>
+      <div class="status" id="jsonbinStatus"></div>
+    </details>
   </div>
 
   <!-- ============ POSTER (this is what gets exported) ============ -->
   <div class="stage">
     <div id="poster">
+      <img id="posterWatermarkImg" class="poster-watermark" alt="" style="display:none;">
       <div class="banner">
         <div class="league-tag" id="leagueTagDisplay" contenteditable="true">RAMIREZ Y AMIGOS</div>
         <div class="banner-main">
@@ -339,13 +470,32 @@
         <span class="c-logo"></span>
         <span class="c-name">NOMBRE</span>
         <span class="c-rd">Rd</span>
+        <span class="c-elo">Elo</span>
         <span class="c-pts">Pts</span>
         <span class="c-arrow"></span>
+        <span class="c-color"></span>
       </div>
 
       <div class="rows" id="rowsContainer">
         <div class="empty-msg">Configura el link de tu Google Sheet para generar el póster.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ TEAM CREST PICKER (not exported) ============ -->
+  <div class="modal-overlay" id="teamPickerOverlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>Elegir escudo de equipo</h3>
+        <button type="button" class="modal-close" id="teamPickerClose">×</button>
+      </div>
+      <input type="text" id="teamPickerSearch" placeholder="Buscar equipo (nombre o siglas)...">
+      <div class="team-picker-grid" id="teamPickerGrid"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="teamPickerUploadBtn">Subir imagen propia</button>
+        <button type="button" class="btn btn-ghost" id="teamPickerRemoveBtn">Quitar logo</button>
+      </div>
+      <div class="hint" id="teamPickerHint"></div>
     </div>
   </div>
 
@@ -360,9 +510,12 @@ function defaultState(){
     leagueName: 'RAMIREZ Y AMIGOS',
     csvUrl: '',
     semana: '1',
-    nameField: '', totalField: '', weeklyField: '',
+    nameField: '', totalField: '', weeklyField: '', eloField: '',
+    layoutMode: 'list', // 'list' (una columna, compacta) | 'columns' (ranking dividido a la mitad)
     nflLogo: null,
-    playerLogos: {} // nombre (lowercase) -> data URL
+    playerLogos: {}, // nombre (lowercase) -> data URL
+    rowColors: {}, // nombre (lowercase) -> color hex, override del fondo de esa fila
+    posterWatermark: { image: null, opacity: 0.12 } // marca de agua centrada detrás de las filas
   };
 }
 let state = defaultState();
@@ -382,16 +535,17 @@ function hasLocalStorage(){
   catch(e){ return false; }
 }
 function coreSlice(){
-  return { leagueName: state.leagueName, csvUrl: state.csvUrl, semana: state.semana, nameField: state.nameField, totalField: state.totalField, weeklyField: state.weeklyField };
+  return { leagueName: state.leagueName, csvUrl: state.csvUrl, semana: state.semana, nameField: state.nameField, totalField: state.totalField, weeklyField: state.weeklyField, eloField: state.eloField, layoutMode: state.layoutMode, rowColors: state.rowColors || {} };
 }
 function logosPayload(){
-  return JSON.stringify({ nflLogo: state.nflLogo || null, playerLogos: state.playerLogos || {} });
+  return JSON.stringify({ nflLogo: state.nflLogo || null, playerLogos: state.playerLogos || {}, posterWatermark: state.posterWatermark || { image:null, opacity:0.12 } });
 }
 function applyLogosPayload(raw){
   const parsed = JSON.parse(raw);
   if(parsed){
     if(parsed.nflLogo) state.nflLogo = parsed.nflLogo;
     if(parsed.playerLogos) state.playerLogos = parsed.playerLogos;
+    if(parsed.posterWatermark) state.posterWatermark = parsed.posterWatermark;
   }
 }
 async function saveState(){
@@ -483,7 +637,7 @@ async function saveHtmlFile(){
     if(window.showSaveFilePicker){
       if(!fileHandle){
         fileHandle = await window.showSaveFilePicker({
-          suggestedName: 'fantasy-football-poster.html',
+          suggestedName: 'fantasy-standings.html',
           types: [{ description:'Página HTML', accept:{ 'text/html':['.html'] } }]
         });
       }
@@ -493,7 +647,7 @@ async function saveHtmlFile(){
     } else {
       const blob = new Blob([htmlContent], {type:'text/html'});
       const link = document.createElement('a');
-      link.download = 'fantasy-football-poster.html';
+      link.download = 'fantasy-standings.html';
       link.href = URL.createObjectURL(blob);
       link.click();
     }
@@ -586,8 +740,14 @@ function guessColumn(headers, keywords){
   }
   return '';
 }
-function fillSelect(selectEl, headers, selected){
+function fillSelect(selectEl, headers, selected, optional){
   selectEl.innerHTML = '';
+  if(optional){
+    const blank = document.createElement('option');
+    blank.value = ''; blank.textContent = '— Ninguna —';
+    if(!selected) blank.selected = true;
+    selectEl.appendChild(blank);
+  }
   headers.forEach(h => {
     const opt = document.createElement('option');
     opt.value = h; opt.textContent = h;
@@ -614,20 +774,23 @@ async function loadData(){
     const nameGuess = state.nameField || guessColumn(headersCurrent, ['equipo','nombre','team','jugador','name']) || headersCurrent[0];
     const totalGuess = state.totalField || guessColumn(headersCurrent, ['total','acumulado']) || headersCurrent[0];
     const weeklyGuess = state.weeklyField || guessColumn(headersCurrent, ['weekly','semanal','semana','week']) || '';
+    const eloGuess = state.eloField || guessColumn(headersCurrent, ['elo']) || '';
 
     fillSelect(el('mapName'), headersCurrent, nameGuess);
     fillSelect(el('mapTotal'), headersCurrent, totalGuess);
     fillSelect(el('mapWeekly'), headersCurrent, weeklyGuess);
-    state.nameField = nameGuess; state.totalField = totalGuess; state.weeklyField = weeklyGuess;
+    fillSelect(el('mapElo'), headersCurrent, eloGuess, true);
+    state.nameField = nameGuess; state.totalField = totalGuess; state.weeklyField = weeklyGuess; state.eloField = eloGuess;
 
     el('advancedWrap').style.display = 'block';
     el('dividerLogos').style.display = 'block';
     el('playerLogosSection').style.display = 'block';
     el('dividerDownload').style.display = 'block';
     el('downloadSection').style.display = 'block';
+    el('btnApplyPoster').style.display = 'block';
+    el('applyPosterHint').style.display = 'block';
 
-    setStatus('Datos cargados: ' + currentData.length + ' equipos.', false);
-    buildPoster();
+    setStatus('Datos cargados: ' + currentData.length + ' equipos. Haz clic en "Actualizar póster" para aplicarlos.', false);
     renderPlayerLogoList();
     saveState();
   }catch(err){
@@ -639,13 +802,20 @@ async function loadData(){
   }
 }
 el('btnFetch').addEventListener('click', loadData);
-el('btnBuild').addEventListener('click', () => {
+
+/* buildPoster() only ever runs from this handler — never automatically on fetch —
+   so refreshing/re-fetching the CSV never silently shifts the poster or trend arrows
+   until the user explicitly applies it. */
+function applyPoster(){
   state.nameField = el('mapName').value;
   state.totalField = el('mapTotal').value;
   state.weeklyField = el('mapWeekly').value;
+  state.eloField = el('mapElo').value;
   buildPoster();
   saveState();
-});
+}
+el('btnBuild').addEventListener('click', applyPoster);
+el('btnApplyPoster').addEventListener('click', applyPoster);
 el('semanaInput').addEventListener('input', () => {
   state.semana = el('semanaInput').value || '';
   el('semanaNumDisplay').value = state.semana;
@@ -665,6 +835,24 @@ el('semanaNumDisplay').addEventListener('input', () => {
   el('semanaInput').value = el('semanaNumDisplay').value;
   state.semana = el('semanaNumDisplay').value;
   saveState();
+});
+
+/* ---------------- LAYOUT TOGGLE (lista compacta vs. dos columnas) ---------------- */
+function applyLayoutMode(){
+  const poster = el('poster');
+  poster.classList.remove('layout-list', 'layout-columns');
+  poster.classList.add(state.layoutMode === 'columns' ? 'layout-columns' : 'layout-list');
+  document.querySelectorAll('.layout-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === state.layoutMode);
+  });
+}
+document.querySelectorAll('.layout-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.layoutMode = btn.dataset.mode;
+    applyLayoutMode();
+    buildPoster();
+    saveState();
+  });
 });
 
 /* ============================================================
@@ -710,7 +898,144 @@ el('btnRemoveNfl').addEventListener('click', (e) => {
   saveLogos();
 });
 
+function renderWatermark(){
+  const wm = state.posterWatermark || { image: null, opacity: 0.12 };
+  const slot = el('watermarkSlot');
+  const img = el('posterWatermarkImg');
+  slot.innerHTML = wm.image ? '<img src="'+wm.image+'" alt="marca de agua">' : '<span class="plus">+</span>';
+  if(wm.image){
+    img.src = wm.image;
+    img.style.display = 'block';
+    img.style.opacity = wm.opacity;
+  } else {
+    img.style.display = 'none';
+  }
+  el('watermarkOpacity').value = wm.opacity;
+}
+el('watermarkSlot').addEventListener('click', () => el('watermarkInput').click());
+el('watermarkInput').addEventListener('change', (e) => {
+  handleImageFile(e.target.files[0], (dataUrl) => {
+    state.posterWatermark.image = dataUrl;
+    renderWatermark();
+    saveLogos();
+  });
+  e.target.value = '';
+});
+el('btnRemoveWatermark').addEventListener('click', (e) => {
+  e.preventDefault();
+  state.posterWatermark.image = null;
+  renderWatermark();
+  saveLogos();
+});
+el('watermarkOpacity').addEventListener('input', () => {
+  state.posterWatermark.opacity = parseFloat(el('watermarkOpacity').value) || 0.12;
+  el('posterWatermarkImg').style.opacity = state.posterWatermark.opacity;
+  saveLogos();
+});
+
 function playerLogoKey(name){ return (name||'').trim().toLowerCase(); }
+
+/* ============================================================
+   TEAM CREST PICKER
+   Reutiliza los escudos NFL ya subidos en survivor-league_new.html en vez de
+   pedir que se suba una imagen por jugador otra vez. Esa herramienta guarda
+   sus escudos en localStorage bajo la llave 'survivor-league-logos'; si ambos
+   archivos viven en el mismo dominio (p.ej. GitHub Pages) o se abren en el
+   mismo navegador vía file://, comparten ese storage y aquí solo lo leemos.
+   ============================================================ */
+const NFL_TEAMS = [
+  {abbr:'ARI',name:'Cardinals',c1:'#97233F'}, {abbr:'ATL',name:'Falcons',c1:'#A71930'},
+  {abbr:'BAL',name:'Ravens',c1:'#241773'}, {abbr:'BUF',name:'Bills',c1:'#00338D'},
+  {abbr:'CAR',name:'Panthers',c1:'#0085CA'}, {abbr:'CHI',name:'Bears',c1:'#0B162A'},
+  {abbr:'CIN',name:'Bengals',c1:'#FB4F14'}, {abbr:'CLE',name:'Browns',c1:'#311D00'},
+  {abbr:'DAL',name:'Cowboys',c1:'#003594'}, {abbr:'DEN',name:'Broncos',c1:'#FB4F14'},
+  {abbr:'DET',name:'Lions',c1:'#0076B6'}, {abbr:'GB', name:'Packers',c1:'#203731'},
+  {abbr:'HOU',name:'Texans',c1:'#03202F'}, {abbr:'IND',name:'Colts',c1:'#002C5F'},
+  {abbr:'JAX',name:'Jaguars',c1:'#101820'}, {abbr:'KC', name:'Chiefs',c1:'#E31837'},
+  {abbr:'LV', name:'Raiders',c1:'#000000'}, {abbr:'LAC',name:'Chargers',c1:'#0080C6'},
+  {abbr:'LAR',name:'Rams',c1:'#003594'}, {abbr:'MIA',name:'Dolphins',c1:'#008E97'},
+  {abbr:'MIN',name:'Vikings',c1:'#4F2683'}, {abbr:'NE', name:'Patriots',c1:'#002244'},
+  {abbr:'NO', name:'Saints',c1:'#D3BC8D'}, {abbr:'NYG',name:'Giants',c1:'#0B2265'},
+  {abbr:'NYJ',name:'Jets',c1:'#125740'}, {abbr:'PHI',name:'Eagles',c1:'#004C54'},
+  {abbr:'PIT',name:'Steelers',c1:'#FFB612'}, {abbr:'SF', name:'49ers',c1:'#AA0000'},
+  {abbr:'SEA',name:'Seahawks',c1:'#002244'}, {abbr:'TB', name:'Buccaneers',c1:'#D50A0A'},
+  {abbr:'TEN',name:'Titans',c1:'#0C2340'}, {abbr:'WAS',name:'Commanders',c1:'#5A1414'}
+];
+const SURVIVOR_LOGOS_KEY = 'survivor-league-logos';
+
+function readSurvivorTeamLogos(){
+  try{
+    const raw = localStorage.getItem(SURVIVOR_LOGOS_KEY);
+    if(!raw) return {};
+    const parsed = JSON.parse(raw);
+    if(parsed && typeof parsed === 'object'){
+      if(parsed.teamLogos) return parsed.teamLogos;
+      if(!Array.isArray(parsed)) return parsed; // formato anterior: mapa directo abbr -> dataURL
+    }
+  }catch(e){}
+  return {};
+}
+
+let teamPickerOnPick = null; // callback(dataUrlOrNull) para la selección actual
+
+function openTeamPicker(onPick){
+  teamPickerOnPick = onPick;
+  el('teamPickerSearch').value = '';
+  renderTeamPickerGrid('');
+  el('teamPickerOverlay').classList.add('show');
+  el('teamPickerSearch').focus();
+}
+function closeTeamPicker(){
+  el('teamPickerOverlay').classList.remove('show');
+  teamPickerOnPick = null;
+}
+function renderTeamPickerGrid(filterText){
+  const survivorLogos = readSurvivorTeamLogos();
+  const hasAny = Object.keys(survivorLogos).length > 0;
+  const q = (filterText || '').trim().toLowerCase();
+  const grid = el('teamPickerGrid');
+  grid.innerHTML = '';
+  NFL_TEAMS
+    .filter(t => !q || t.abbr.toLowerCase().includes(q) || t.name.toLowerCase().includes(q))
+    .forEach(t => {
+      const logoUrl = survivorLogos[t.abbr];
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'team-pick-tile';
+      tile.disabled = !logoUrl;
+      tile.title = logoUrl ? ('Usar escudo de ' + t.name) : ('Sin escudo cargado aún para ' + t.name + ' en Survivor League');
+      tile.innerHTML =
+        (logoUrl ? '<img src="'+logoUrl+'" alt="'+t.abbr+'">' : '<span class="tp-abbr" style="color:'+t.c1+'">'+t.abbr+'</span>') +
+        '<span class="tp-name">'+t.name+'</span>';
+      if(logoUrl){
+        tile.addEventListener('click', () => {
+          if(teamPickerOnPick) teamPickerOnPick(logoUrl);
+          closeTeamPicker();
+        });
+      }
+      grid.appendChild(tile);
+    });
+  el('teamPickerHint').textContent = hasAny
+    ? 'Los escudos se sincronizan desde Survivor League (mismo navegador/sitio). Si falta alguno, súbelo primero ahí.'
+    : 'No se encontraron escudos guardados de Survivor League en este navegador. Súbelos primero en esa herramienta, o usa "Subir imagen propia" abajo.';
+}
+el('teamPickerSearch').addEventListener('input', () => renderTeamPickerGrid(el('teamPickerSearch').value));
+el('teamPickerClose').addEventListener('click', closeTeamPicker);
+el('teamPickerOverlay').addEventListener('click', (e) => { if(e.target.id === 'teamPickerOverlay') closeTeamPicker(); });
+el('teamPickerUploadBtn').addEventListener('click', () => {
+  const cb = teamPickerOnPick;
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/png,image/*';
+  inp.addEventListener('change', (e) => {
+    handleImageFile(e.target.files[0], (dataUrl) => { if(cb) cb(dataUrl); });
+  });
+  inp.click();
+  closeTeamPicker();
+});
+el('teamPickerRemoveBtn').addEventListener('click', () => {
+  if(teamPickerOnPick) teamPickerOnPick(null);
+  closeTeamPicker();
+});
 
 function renderPlayerLogoList(){
   const box = el('playerLogoList');
@@ -725,20 +1050,13 @@ function renderPlayerLogoList(){
     const thumb = document.createElement('div');
     thumb.className = 'plog';
     thumb.innerHTML = state.playerLogos[key] ? '<img src="'+state.playerLogos[key]+'" alt="">' : '<span style="color:#c3c7ce;font-size:10px;">+</span>';
-    thumb.title = 'Subir logo para ' + name;
-
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/png,image/*'; inp.style.display = 'none';
-    inp.addEventListener('change', (e) => {
-      handleImageFile(e.target.files[0], (dataUrl) => {
-        state.playerLogos[key] = dataUrl;
-        renderPlayerLogoList();
-        buildPoster();
-        saveLogos();
-      });
-      e.target.value = '';
-    });
-    thumb.addEventListener('click', () => inp.click());
+    thumb.title = 'Elegir escudo para ' + name;
+    thumb.addEventListener('click', () => openTeamPicker((dataUrl) => {
+      if(dataUrl) state.playerLogos[key] = dataUrl; else delete state.playerLogos[key];
+      renderPlayerLogoList();
+      buildPoster();
+      saveLogos();
+    }));
 
     const nm = document.createElement('div');
     nm.className = 'pname'; nm.textContent = name;
@@ -753,7 +1071,7 @@ function renderPlayerLogoList(){
       saveLogos();
     });
 
-    row.appendChild(thumb); row.appendChild(inp); row.appendChild(nm); row.appendChild(rm);
+    row.appendChild(thumb); row.appendChild(nm); row.appendChild(rm);
     box.appendChild(row);
   });
 }
@@ -763,12 +1081,26 @@ function renderPlayerLogoList(){
    ============================================================ */
 function toNumber(v){ return parseFloat((v||'0').toString().replace(',', '.')) || 0; }
 
+/* Contraste automático: elige texto blanco o negro según qué tan clara sea la
+   fila con color personalizado, para que el nombre/Rd/Pts sigan siendo legibles. */
+function pickTextColor(hex){
+  const h = (hex || '').replace('#', '');
+  if(h.length !== 6) return '#f4f5fb';
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return luminance > 0.6 ? '#050814' : '#f4f5fb';
+}
+
 function buildPoster(){
   const nameField = state.nameField || el('mapName').value;
   const totalField = state.totalField || el('mapTotal').value;
   const weeklyField = state.weeklyField || el('mapWeekly').value;
+  const eloField = state.eloField || el('mapElo').value;
 
   if(!nameField || !totalField){ setStatus('Selecciona al menos las columnas de Nombre y Total.', true); return; }
+
+  applyLayoutMode();
+  const isColumns = state.layoutMode === 'columns';
 
   const enriched = currentData.map(r => {
     const total = toNumber(r[totalField]);
@@ -784,12 +1116,15 @@ function buildPoster(){
   const container = el('rowsContainer');
   container.innerHTML = '';
 
-  currentRanked.forEach((r, i) => {
+  /* Builds one row. `i` only drives the dark/light stripe alternation, so each
+     column in the two-column layout restarts its own stripe pattern at 0. */
+  function buildRow(r, i){
     const rank = r.__rank;
     const name = (r[nameField] || '').toString();
     const key = playerLogoKey(name);
     const rdVal = weeklyField ? r.__weekly : '';
     const ptsVal = r.__total;
+    const eloVal = eloField ? (r[eloField] || '') : '';
 
     let trend = 'flat';
     if(weeklyField){
@@ -803,55 +1138,108 @@ function buildPoster(){
     const rowDiv = document.createElement('div');
     const isDark = rank <= 3 ? true : (i % 2 === 0);
     rowDiv.className = 'rowline ' + (isDark ? 'dark' : 'light');
+    const customColor = state.rowColors[key];
+    const customText = customColor ? pickTextColor(customColor) : null;
+    if(customColor) rowDiv.style.backgroundColor = customColor;
 
     const badge = document.createElement('div');
     badge.className = 'badge ' + (rank === 1 ? 'b-gold' : rank === 2 ? 'b-silver' : rank === 3 ? 'b-bronze' : (isDark ? 'b-light' : 'b-navy'));
     badge.textContent = rank;
+    rowDiv.appendChild(badge);
 
-    const logoDiv = document.createElement('div');
-    logoDiv.className = 'team-logo';
-    logoDiv.title = 'Subir logo para ' + name;
-    logoDiv.innerHTML = state.playerLogos[key] ? '<img src="'+state.playerLogos[key]+'" alt="">' : '<span class="plus">+</span>';
-    const logoInput = document.createElement('input');
-    logoInput.type = 'file'; logoInput.accept = 'image/png,image/*'; logoInput.style.display = 'none';
-    logoInput.addEventListener('change', (e) => {
-      handleImageFile(e.target.files[0], (dataUrl) => {
-        state.playerLogos[key] = dataUrl;
+    if(!isColumns){
+      const logoDiv = document.createElement('div');
+      logoDiv.className = 'team-logo';
+      logoDiv.title = 'Elegir escudo para ' + name;
+      logoDiv.innerHTML = state.playerLogos[key] ? '<img src="'+state.playerLogos[key]+'" alt="">' : '<span class="plus">+</span>';
+      logoDiv.addEventListener('click', () => openTeamPicker((dataUrl) => {
+        if(dataUrl) state.playerLogos[key] = dataUrl; else delete state.playerLogos[key];
         buildPoster();
         renderPlayerLogoList();
         saveLogos();
-      });
-      e.target.value = '';
-    });
-    logoDiv.addEventListener('click', () => logoInput.click());
+      }));
+      rowDiv.appendChild(logoDiv);
+    }
 
     const nm = document.createElement('div');
     nm.className = 'nm'; nm.contentEditable = 'true'; nm.spellcheck = false;
     nm.textContent = name.toUpperCase();
+    if(customText) nm.style.color = customText;
+    rowDiv.appendChild(nm);
 
     const rd = document.createElement('div');
     rd.className = 'rd'; rd.contentEditable = 'true'; rd.spellcheck = false;
     rd.textContent = rdVal;
+    if(customText) rd.style.color = customText;
+    rowDiv.appendChild(rd);
+
+    const eloDiv = document.createElement('div');
+    eloDiv.className = 'elo'; eloDiv.contentEditable = 'true'; eloDiv.spellcheck = false;
+    eloDiv.textContent = eloVal;
+    if(customText) eloDiv.style.color = customText;
+    rowDiv.appendChild(eloDiv);
 
     const ptsDiv = document.createElement('div');
     ptsDiv.className = 'pts'; ptsDiv.contentEditable = 'true'; ptsDiv.spellcheck = false;
     ptsDiv.textContent = ptsVal;
+    if(customText) ptsDiv.style.color = customText;
+    rowDiv.appendChild(ptsDiv);
 
     const arrow = document.createElement('div');
     arrow.className = 'arrow';
     arrow.title = 'Clic para cambiar (subida/bajada/igual)';
     arrow.addEventListener('click', () => cycleArrow(arrow));
     renderArrow(arrow, trend);
-
-    rowDiv.appendChild(badge);
-    rowDiv.appendChild(logoDiv);
-    rowDiv.appendChild(logoInput);
-    rowDiv.appendChild(nm);
-    rowDiv.appendChild(rd);
-    rowDiv.appendChild(ptsDiv);
     rowDiv.appendChild(arrow);
-    container.appendChild(rowDiv);
-  });
+
+    const colorCell = document.createElement('div');
+    colorCell.className = 'row-color no-export';
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = customColor || '#2b3ef5';
+    colorInput.title = 'Color de esta fila';
+    const colorReset = document.createElement('button');
+    colorReset.type = 'button';
+    colorReset.className = 'row-color-reset' + (customColor ? ' show' : '');
+    colorReset.textContent = '×';
+    colorReset.title = 'Quitar color personalizado';
+    colorInput.addEventListener('input', () => {
+      state.rowColors[key] = colorInput.value;
+      buildPoster();
+      saveState();
+    });
+    colorReset.addEventListener('click', () => {
+      delete state.rowColors[key];
+      buildPoster();
+      saveState();
+    });
+    colorCell.appendChild(colorInput);
+    colorCell.appendChild(colorReset);
+    rowDiv.appendChild(colorCell);
+
+    return rowDiv;
+  }
+
+  if(isColumns){
+    const wrap = document.createElement('div');
+    wrap.className = 'rows-2col';
+    const half = Math.ceil(currentRanked.length / 2);
+    [currentRanked.slice(0, half), currentRanked.slice(half)].forEach(chunk => {
+      const block = document.createElement('div');
+      block.className = 'col-block';
+      if(chunk.length){
+        const header = document.createElement('div');
+        header.className = 'col-mini-header';
+        header.textContent = chunk.length > 1 ? (chunk[0].__rank + '–' + chunk[chunk.length-1].__rank) : ('' + chunk[0].__rank);
+        block.appendChild(header);
+      }
+      chunk.forEach((r, idxInChunk) => block.appendChild(buildRow(r, idxInChunk)));
+      wrap.appendChild(block);
+    });
+    container.appendChild(wrap);
+  } else {
+    currentRanked.forEach((r, i) => container.appendChild(buildRow(r, i)));
+  }
 }
 
 function renderArrow(arrowEl, state){
@@ -875,13 +1263,13 @@ function cycleArrow(arrowEl){
 async function exportImage(format){
   const poster = el('poster');
   document.activeElement && document.activeElement.blur();
-  const canvas = await html2canvas(poster, { scale: 3, backgroundColor: null, useCORS: true });
+  const canvas = await html2canvas(poster, { scale: 3, backgroundColor: null, useCORS: true, ignoreElements: (node) => node.classList && node.classList.contains('no-export') });
   const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
   const quality = format === 'jpg' ? 0.95 : undefined;
   const dataUrl = canvas.toDataURL(mime, quality);
   const link = document.createElement('a');
   const week = state.semana || 'semana';
-  link.download = 'fantasy-football-semana-' + week + '.' + (format === 'jpg' ? 'jpg' : 'png');
+  link.download = 'fantasy-standings-semana-' + week + '.' + (format === 'jpg' ? 'jpg' : 'png');
   link.href = dataUrl;
   link.click();
 }
@@ -889,17 +1277,115 @@ el('btnPng').addEventListener('click', () => exportImage('png'));
 el('btnJpg').addEventListener('click', () => exportImage('jpg'));
 
 /* ============================================================
+   CLOUD SYNC (jsonbin.io, opcional)
+   ============================================================
+   Infraestructura lista para usar en cuanto tengas un bin: las credenciales viven
+   solo en localStorage (nunca en "Guardar copia HTML", para no filtrar tu Access Key
+   al compartir el archivo) y la sincronización es 100% manual con dos botones — no hay
+   nada automático en segundo plano, porque jsonbin no tiene bloqueo de escritura y dos
+   personas subiendo a la vez podrían pisarse los datos sin darse cuenta. */
+const JSONBIN_CFG_KEY = 'fantasy-standings-jsonbin-config';
+function loadJsonbinConfig(){
+  try{
+    const raw = localStorage.getItem(JSONBIN_CFG_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { binId: '', accessKey: '' };
+}
+function saveJsonbinConfig(){
+  try{
+    localStorage.setItem(JSONBIN_CFG_KEY, JSON.stringify({ binId: el('jsonbinId').value.trim(), accessKey: el('jsonbinKey').value.trim() }));
+  }catch(e){}
+}
+function setJsonbinStatus(msg, isErr){
+  const box = el('jsonbinStatus');
+  box.textContent = msg;
+  box.className = 'status show ' + (isErr ? 'err' : 'ok');
+}
+async function jsonbinGet(binId, accessKey){
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + encodeURIComponent(binId) + '/latest', {
+    headers: { 'X-Access-Key': accessKey }
+  });
+  if(!res.ok){
+    if(res.status === 401 || res.status === 403) throw new Error('jsonbin rechazó el Access Key (HTTP ' + res.status + '). Revisa que sea el correcto para este bin.');
+    if(res.status === 404) throw new Error('No se encontró ese Bin ID (HTTP 404). Revisa que esté bien copiado.');
+    throw new Error('jsonbin respondió con error (HTTP ' + res.status + ')');
+  }
+  const json = await res.json();
+  return json.record;
+}
+async function jsonbinPut(binId, accessKey, data){
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + encodeURIComponent(binId), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Access-Key': accessKey },
+    body: JSON.stringify(data)
+  });
+  if(!res.ok){
+    if(res.status === 401 || res.status === 403) throw new Error('jsonbin rechazó el Access Key (HTTP ' + res.status + '). Revisa que sea el correcto para este bin.');
+    if(res.status === 404) throw new Error('No se encontró ese Bin ID (HTTP 404). Revisa que esté bien copiado.');
+    throw new Error('jsonbin respondió con error (HTTP ' + res.status + ')');
+  }
+}
+el('jsonbinId').addEventListener('change', saveJsonbinConfig);
+el('jsonbinKey').addEventListener('change', saveJsonbinConfig);
+el('btnJsonbinUpload').addEventListener('click', async () => {
+  const binId = el('jsonbinId').value.trim();
+  const accessKey = el('jsonbinKey').value.trim();
+  if(!binId || !accessKey){ setJsonbinStatus('Falta el Bin ID o el Access Key.', true); return; }
+  saveJsonbinConfig();
+  el('btnJsonbinUpload').disabled = true;
+  try{
+    await jsonbinPut(binId, accessKey, state);
+    setJsonbinStatus('Datos subidos a jsonbin correctamente.', false);
+  }catch(err){
+    setJsonbinStatus('Error: ' + err.message, true);
+  }finally{
+    el('btnJsonbinUpload').disabled = false;
+  }
+});
+el('btnJsonbinDownload').addEventListener('click', async () => {
+  const binId = el('jsonbinId').value.trim();
+  const accessKey = el('jsonbinKey').value.trim();
+  if(!binId || !accessKey){ setJsonbinStatus('Falta el Bin ID o el Access Key.', true); return; }
+  if(!confirm('Esto reemplaza tu configuración local (liga, logos, colores, link CSV) con lo que esté guardado en la nube. ¿Continuar?')) return;
+  saveJsonbinConfig();
+  el('btnJsonbinDownload').disabled = true;
+  try{
+    const remote = await jsonbinGet(binId, accessKey);
+    if(!remote || typeof remote !== 'object') throw new Error('El bin no contiene datos válidos.');
+    state = Object.assign(defaultState(), remote);
+    await saveState();
+    await saveLogos();
+    applyStateToUI();
+    setJsonbinStatus('Datos bajados de jsonbin correctamente.', false);
+  }catch(err){
+    setJsonbinStatus('Error: ' + err.message, true);
+  }finally{
+    el('btnJsonbinDownload').disabled = false;
+  }
+});
+
+/* ============================================================
    INIT
    ============================================================ */
-(async function init(){
-  await loadState();
+function applyStateToUI(){
   el('leagueNameInput').value = state.leagueName || 'RAMIREZ Y AMIGOS';
   el('leagueTagDisplay').textContent = (state.leagueName || 'RAMIREZ Y AMIGOS').toUpperCase();
   el('semanaInput').value = state.semana || '1';
   el('semanaNumDisplay').value = state.semana || '1';
   el('urlCurrent').value = state.csvUrl || '';
+  if(!state.layoutMode) state.layoutMode = 'list';
+  applyLayoutMode();
   renderNflLogo();
+  renderWatermark();
   markSaved();
+}
+(async function init(){
+  await loadState();
+  applyStateToUI();
+  const jsonbinCfg = loadJsonbinConfig();
+  el('jsonbinId').value = jsonbinCfg.binId || '';
+  el('jsonbinKey').value = jsonbinCfg.accessKey || '';
   if(state.csvUrl){ await loadData(); }
 })();
 </script>
