@@ -220,7 +220,7 @@
     padding:0 4px;
   }
   .rowline.dark{background:var(--panel);}
-  .rowline.light{background:rgba(244,245,251,0.94);}
+  .rowline.light{background:linear-gradient(100deg, rgba(139,108,245,0.14) 0%, rgba(43,62,245,0.16) 100%), var(--panel-2);}
 
   .badge{display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px;color:var(--field);}
   #poster.layout-list .badge{width:22px;height:20px;font-size:10.5px;margin-left:4px;}
@@ -228,33 +228,29 @@
   .badge.b-gold{background:var(--gold);}
   .badge.b-silver{background:var(--silver);}
   .badge.b-bronze{background:var(--bronze);color:#fff;}
-  .badge.b-light{background:rgba(255,255,255,0.12);color:var(--chalk);}
-  .badge.b-navy{background:var(--panel-2);color:#fff;}
-  .rowline.light .badge.b-light{background:#e4e6ea;color:var(--field);}
+  .badge.b-light{background:rgba(255,255,255,0.14);color:var(--chalk);}
 
   .team-logo{
     width:20px;height:20px;border-radius:5px;justify-self:center;
     display:flex;align-items:center;justify-content:center;overflow:hidden;
     background:rgba(255,255,255,0.06);cursor:pointer;
+    background-size:contain;background-position:center;background-repeat:no-repeat;
   }
-  .rowline.light .team-logo{background:#e4e6ea;}
-  .team-logo img{width:100%;height:100%;object-fit:contain;}
+  .rowline.light .team-logo{background-color:rgba(255,255,255,0.08);}
   .team-logo .plus{font-size:10px;color:rgba(255,255,255,0.35);}
-  .rowline.light .team-logo .plus{color:#b7bcc4;}
 
   .nm{font-weight:600;letter-spacing:0.2px;text-transform:uppercase;padding-left:8px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #poster.layout-list .nm{font-size:11px;}
   #poster.layout-columns .nm{font-size:9px;padding-left:5px;}
-  .rowline.dark .nm{color:#fff;}
-  .rowline.light .nm{color:var(--field);}
+  .rowline.dark .nm, .rowline.light .nm{color:#fff;}
 
   .rd, .elo, .pts{text-align:center;font-weight:600;outline:none;font-variant-numeric:tabular-nums;}
   #poster.layout-list .rd, #poster.layout-list .elo{font-size:10px;}
   #poster.layout-list .pts{font-weight:700;font-size:11.5px;}
   #poster.layout-columns .rd, #poster.layout-columns .elo{font-size:8.5px;}
   #poster.layout-columns .pts{font-weight:700;font-size:9.5px;}
-  .rowline.dark .rd, .rowline.dark .elo, .rowline.dark .pts{color:#dfe3e8;}
-  .rowline.light .rd, .rowline.light .elo, .rowline.light .pts{color:var(--field);}
+  .rowline.dark .rd, .rowline.dark .elo, .rowline.dark .pts,
+  .rowline.light .rd, .rowline.light .elo, .rowline.light .pts{color:#dfe3e8;}
 
   .arrow{justify-self:center;cursor:pointer;display:flex;align-items:center;justify-content:center;}
   #poster.layout-list .arrow{width:16px;height:16px;}
@@ -448,14 +444,7 @@
         <div class="league-tag" id="leagueTagDisplay" contenteditable="true">RAMIREZ Y AMIGOS</div>
         <div class="banner-main">
           <div class="nfl-slot" id="nflSlotPoster">
-            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="32" cy="32" rx="30" ry="19" fill="#7a4522" stroke="#3a2110" stroke-width="2"/>
-              <line x1="20" y1="32" x2="44" y2="32" stroke="#e9dcc9" stroke-width="2"/>
-              <line x1="25" y1="27" x2="25" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
-              <line x1="30" y1="27" x2="30" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
-              <line x1="35" y1="27" x2="35" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
-              <line x1="40" y1="27" x2="40" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
-            </svg>
+            <img class="football-icon" alt="football" style="width:70%;height:70%;">
           </div>
           <div class="wordmark">
             <div class="line1">FANTASY</div>
@@ -858,6 +847,19 @@ document.querySelectorAll('.layout-opt').forEach(btn => {
 /* ============================================================
    LOGO UPLOADS
    ============================================================ */
+/* El balón placeholder se guarda como <img> con un data-URI (en vez de <svg> vivo en el DOM)
+   porque html2canvas re-dibuja los <svg> inline con bugs de anti-aliasing/clip que lo
+   convertían en un blob borroso al exportar; un <img> lo rasteriza igual que cualquier logo. */
+const FOOTBALL_ICON_URL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+  '<ellipse cx="32" cy="32" rx="30" ry="19" fill="#7a4522" stroke="#3a2110" stroke-width="2"/>' +
+  '<line x1="20" y1="32" x2="44" y2="32" stroke="#e9dcc9" stroke-width="2"/>' +
+  '<line x1="25" y1="27" x2="25" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>' +
+  '<line x1="30" y1="27" x2="30" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>' +
+  '<line x1="35" y1="27" x2="35" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>' +
+  '<line x1="40" y1="27" x2="40" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>' +
+  '</svg>'
+);
 function renderNflLogo(){
   const slotPanel = el('nflLogoSlot');
   const slotPoster = el('nflSlotPoster');
@@ -866,14 +868,7 @@ function renderNflLogo(){
     slotPoster.innerHTML = '<img src="'+state.nflLogo+'" alt="logo">';
   } else {
     slotPanel.innerHTML = '<span class="plus">+</span>';
-    slotPoster.innerHTML = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="32" cy="32" rx="30" ry="19" fill="#7a4522" stroke="#3a2110" stroke-width="2"/>
-      <line x1="20" y1="32" x2="44" y2="32" stroke="#e9dcc9" stroke-width="2"/>
-      <line x1="25" y1="27" x2="25" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
-      <line x1="30" y1="27" x2="30" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
-      <line x1="35" y1="27" x2="35" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
-      <line x1="40" y1="27" x2="40" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>
-    </svg>`;
+    slotPoster.innerHTML = '<img class="football-icon" src="'+FOOTBALL_ICON_URL+'" alt="football" style="width:70%;height:70%;">';
   }
 }
 function handleImageFile(file, cb){
@@ -1143,7 +1138,7 @@ function buildPoster(){
     if(customColor) rowDiv.style.backgroundColor = customColor;
 
     const badge = document.createElement('div');
-    badge.className = 'badge ' + (rank === 1 ? 'b-gold' : rank === 2 ? 'b-silver' : rank === 3 ? 'b-bronze' : (isDark ? 'b-light' : 'b-navy'));
+    badge.className = 'badge ' + (rank === 1 ? 'b-gold' : rank === 2 ? 'b-silver' : rank === 3 ? 'b-bronze' : 'b-light');
     badge.textContent = rank;
     rowDiv.appendChild(badge);
 
@@ -1151,7 +1146,13 @@ function buildPoster(){
       const logoDiv = document.createElement('div');
       logoDiv.className = 'team-logo';
       logoDiv.title = 'Elegir escudo para ' + name;
-      logoDiv.innerHTML = state.playerLogos[key] ? '<img src="'+state.playerLogos[key]+'" alt="">' : '<span class="plus">+</span>';
+      if(state.playerLogos[key]){
+        logoDiv.innerHTML = '';
+        logoDiv.style.backgroundImage = 'url("'+state.playerLogos[key]+'")';
+      } else {
+        logoDiv.innerHTML = '<span class="plus">+</span>';
+        logoDiv.style.backgroundImage = 'none';
+      }
       logoDiv.addEventListener('click', () => openTeamPicker((dataUrl) => {
         if(dataUrl) state.playerLogos[key] = dataUrl; else delete state.playerLogos[key];
         buildPoster();
@@ -1263,9 +1264,9 @@ function cycleArrow(arrowEl){
 async function exportImage(format){
   const poster = el('poster');
   document.activeElement && document.activeElement.blur();
-  const canvas = await html2canvas(poster, { scale: 3, backgroundColor: null, useCORS: true, ignoreElements: (node) => node.classList && node.classList.contains('no-export') });
+  const canvas = await html2canvas(poster, { scale: 4, backgroundColor: null, useCORS: true, imageTimeout: 15000, ignoreElements: (node) => node.classList && node.classList.contains('no-export') });
   const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
-  const quality = format === 'jpg' ? 0.95 : undefined;
+  const quality = format === 'jpg' ? 0.98 : undefined;
   const dataUrl = canvas.toDataURL(mime, quality);
   const link = document.createElement('a');
   const week = state.semana || 'semana';
