@@ -1882,7 +1882,7 @@ function renderCardsTab(){
 /* ---------------- EXPORT ---------------- */
 function exportElementAsPng(el, filename){
   return html2canvas(el, {
-    backgroundColor:'#101a4a', scale:2, useCORS:true,
+    backgroundColor:'#101a4a', scale:4, useCORS:true, imageTimeout:15000,
     ignoreElements: (node)=> node.classList && node.classList.contains('no-export')
   }).then(canvas=>{
     const link = document.createElement('a');
