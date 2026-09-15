@@ -387,6 +387,10 @@
         <select id="mapWeekly"></select>
       </div>
       <div class="field">
+        <label>Columna → Posición / No <span class="opt">(opcional — si no la eliges, se calcula automáticamente por Total)</span></label>
+        <select id="mapNo"></select>
+      </div>
+      <div class="field">
         <label>Columna → Elo <span class="opt">(opcional)</span></label>
         <select id="mapElo"></select>
       </div>
@@ -499,7 +503,7 @@ function defaultState(){
     leagueName: 'RAMIREZ Y AMIGOS',
     csvUrl: '',
     semana: '1',
-    nameField: '', totalField: '', weeklyField: '', eloField: '',
+    nameField: '', totalField: '', weeklyField: '', eloField: '', noField: '',
     layoutMode: 'list', // 'list' (una columna, compacta) | 'columns' (ranking dividido a la mitad)
     nflLogo: null,
     playerLogos: {}, // nombre (lowercase) -> data URL
@@ -524,7 +528,7 @@ function hasLocalStorage(){
   catch(e){ return false; }
 }
 function coreSlice(){
-  return { leagueName: state.leagueName, csvUrl: state.csvUrl, semana: state.semana, nameField: state.nameField, totalField: state.totalField, weeklyField: state.weeklyField, eloField: state.eloField, layoutMode: state.layoutMode, rowColors: state.rowColors || {} };
+  return { leagueName: state.leagueName, csvUrl: state.csvUrl, semana: state.semana, nameField: state.nameField, totalField: state.totalField, weeklyField: state.weeklyField, eloField: state.eloField, noField: state.noField, layoutMode: state.layoutMode, rowColors: state.rowColors || {} };
 }
 function logosPayload(){
   return JSON.stringify({ nflLogo: state.nflLogo || null, playerLogos: state.playerLogos || {}, posterWatermark: state.posterWatermark || { image:null, opacity:0.12 } });
@@ -724,6 +728,10 @@ function setStatus(msg, isErr){
 function guessColumn(headers, keywords){
   const lower = headers.map(h => h.toLowerCase());
   for(const kw of keywords){
+    const idx = lower.findIndex(h => h === kw);
+    if(idx !== -1) return headers[idx];
+  }
+  for(const kw of keywords){
     const idx = lower.findIndex(h => h.includes(kw));
     if(idx !== -1) return headers[idx];
   }
@@ -764,12 +772,14 @@ async function loadData(){
     const totalGuess = state.totalField || guessColumn(headersCurrent, ['total','acumulado']) || headersCurrent[0];
     const weeklyGuess = state.weeklyField || guessColumn(headersCurrent, ['weekly','semanal','semana','week']) || '';
     const eloGuess = state.eloField || guessColumn(headersCurrent, ['elo']) || '';
+    const noGuess = state.noField || guessColumn(headersCurrent, ['no', 'núm', 'num', 'posición', 'posicion', 'pos', 'rank']) || '';
 
     fillSelect(el('mapName'), headersCurrent, nameGuess);
     fillSelect(el('mapTotal'), headersCurrent, totalGuess);
     fillSelect(el('mapWeekly'), headersCurrent, weeklyGuess);
+    fillSelect(el('mapNo'), headersCurrent, noGuess, true);
     fillSelect(el('mapElo'), headersCurrent, eloGuess, true);
-    state.nameField = nameGuess; state.totalField = totalGuess; state.weeklyField = weeklyGuess; state.eloField = eloGuess;
+    state.nameField = nameGuess; state.totalField = totalGuess; state.weeklyField = weeklyGuess; state.eloField = eloGuess; state.noField = noGuess;
 
     el('advancedWrap').style.display = 'block';
     el('dividerLogos').style.display = 'block';
@@ -800,6 +810,7 @@ function applyPoster(){
   state.totalField = el('mapTotal').value;
   state.weeklyField = el('mapWeekly').value;
   state.eloField = el('mapElo').value;
+  state.noField = el('mapNo').value;
   buildPoster();
   saveState();
 }
@@ -1083,6 +1094,7 @@ function buildPoster(){
   const totalField = state.totalField || el('mapTotal').value;
   const weeklyField = state.weeklyField || el('mapWeekly').value;
   const eloField = state.eloField || el('mapElo').value;
+  const noField = state.noField || el('mapNo').value;
 
   if(!nameField || !totalField){ setStatus('Selecciona al menos las columnas de Nombre y Total.', true); return; }
 
@@ -1092,10 +1104,30 @@ function buildPoster(){
   const enriched = currentData.map(r => {
     const total = toNumber(r[totalField]);
     const weekly = weeklyField ? toNumber(r[weeklyField]) : 0;
-    return {...r, __total: total, __weekly: weekly, __prevTotal: total - weekly};
+    const noRaw = noField ? (r[noField] || '').toString().trim() : '';
+    return {...r, __total: total, __weekly: weekly, __prevTotal: total - weekly, __noRaw: noRaw, __noNum: toNumber(noRaw)};
   });
 
-  const currentRanked = [...enriched].sort((a,b) => b.__total - a.__total).map((r,i) => ({...r, __rank: i+1}));
+  /* Trend arrows always track movement by Total (this week vs. last), regardless
+     of what's shown in the position badge — so we keep a Total-based rank map
+     for that, separate from the badge label/order below. */
+  const totalRanked = [...enriched].sort((a,b) => b.__total - a.__total).map((r,i) => ({...r, __totalRank: i+1}));
+  const totalRankMap = {};
+  totalRanked.forEach(r => { totalRankMap[playerLogoKey(r[nameField])] = r.__totalRank; });
+
+  /* Badge number/order: if a Posición/No column is mapped, use it as-is (both for
+     sorting and for the number shown) instead of recalculating 1,2,3... from Total —
+     the sheet's own numbering (manual tie-breaks, etc.) wins. */
+  const sorted = noField
+    ? [...enriched].sort((a,b) => a.__noNum - b.__noNum)
+    : totalRanked;
+  const currentRanked = sorted.map((r,i) => ({
+    ...r,
+    __rank: totalRankMap[playerLogoKey(r[nameField])] || (i+1),
+    __badgeNum: noField ? (r.__noNum || (i+1)) : (i+1),
+    __badgeLabel: noField ? (r.__noRaw || String(i+1)) : String(i+1)
+  }));
+
   const prevRanked = [...enriched].sort((a,b) => b.__prevTotal - a.__prevTotal).map((r,i) => ({...r, __prevRank: i+1}));
   const prevRankMap = {};
   prevRanked.forEach(r => { prevRankMap[playerLogoKey(r[nameField])] = r.__prevRank; });
@@ -1107,6 +1139,8 @@ function buildPoster(){
      column in the two-column layout restarts its own stripe pattern at 0. */
   function buildRow(r, i){
     const rank = r.__rank;
+    const badgeNum = r.__badgeNum;
+    const badgeLabel = r.__badgeLabel;
     const name = (r[nameField] || '').toString();
     const key = playerLogoKey(name);
     const rdVal = weeklyField ? r.__weekly : '';
@@ -1123,7 +1157,7 @@ function buildPoster(){
     }
 
     const rowDiv = document.createElement('div');
-    const isDark = rank <= 3 ? true : (i % 2 === 0);
+    const isDark = badgeNum <= 3 ? true : (i % 2 === 0);
     rowDiv.className = 'rowline ' + (isDark ? 'dark' : 'light');
     const customColor = state.rowColors[key];
     const customText = customColor ? pickTextColor(customColor) : null;
@@ -1135,8 +1169,8 @@ function buildPoster(){
     if(customText) eloDiv.style.color = customText;
 
     const badge = document.createElement('div');
-    badge.className = 'badge ' + (rank === 1 ? 'b-gold' : rank === 2 ? 'b-silver' : rank === 3 ? 'b-bronze' : 'b-light');
-    badge.textContent = rank;
+    badge.className = 'badge ' + (badgeNum === 1 ? 'b-gold' : badgeNum === 2 ? 'b-silver' : badgeNum === 3 ? 'b-bronze' : 'b-light');
+    badge.textContent = badgeLabel;
     rowDiv.appendChild(badge);
 
     if(!isColumns){
@@ -1224,7 +1258,7 @@ function buildPoster(){
       if(chunk.length){
         const header = document.createElement('div');
         header.className = 'col-mini-header';
-        header.textContent = chunk.length > 1 ? (chunk[0].__rank + '–' + chunk[chunk.length-1].__rank) : ('' + chunk[0].__rank);
+        header.textContent = chunk.length > 1 ? (chunk[0].__badgeLabel + '–' + chunk[chunk.length-1].__badgeLabel) : ('' + chunk[0].__badgeLabel);
         block.appendChild(header);
       }
       chunk.forEach((r, idxInChunk) => block.appendChild(buildRow(r, idxInChunk)));
