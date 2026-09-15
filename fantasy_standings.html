@@ -192,7 +192,7 @@
   .col-header span{font-weight:600;letter-spacing:1.2px;color:var(--chalk-dim);text-transform:uppercase;}
   .col-header .c-rd, .col-header .c-elo, .col-header .c-pts, .col-header .c-logo{text-align:center;}
 
-  #poster.layout-list .col-header{ display:grid; grid-template-columns:46px 34px 40px 1fr 40px 54px 22px 24px; font-size:11px; }
+  #poster.layout-list .col-header{ display:grid; grid-template-columns:34px 40px 1fr 40px 54px 46px 22px 24px; font-size:11px; }
   #poster.layout-columns .col-header{ display:none; }
 
   .rows{position:relative; z-index:1; padding:0 16px 16px;}
@@ -203,7 +203,7 @@
   }
   #poster.layout-list .rowline{
     display:grid;
-    grid-template-columns:46px 34px 40px 1fr 40px 54px 22px 24px;
+    grid-template-columns:34px 40px 1fr 40px 54px 46px 22px 24px;
     min-height:38px;
     margin-bottom:5px;
   }
@@ -214,7 +214,7 @@
   }
   #poster.layout-columns .rowline{
     display:grid;
-    grid-template-columns:24px 20px 1fr 22px 28px 14px 18px;
+    grid-template-columns:20px 1fr 22px 28px 24px 14px 18px;
     min-height:24px;
     margin-bottom:3px;
     padding:0 4px;
@@ -455,12 +455,12 @@
       </div>
 
       <div class="col-header">
-        <span class="c-elo">Elo</span>
         <span class="c-no">NO</span>
         <span class="c-logo"></span>
         <span class="c-name">NOMBRE</span>
         <span class="c-rd">Rd</span>
         <span class="c-pts">Pts</span>
+        <span class="c-elo">Elo</span>
         <span class="c-arrow"></span>
         <span class="c-color"></span>
       </div>
@@ -1133,7 +1133,6 @@ function buildPoster(){
     eloDiv.className = 'elo'; eloDiv.contentEditable = 'true'; eloDiv.spellcheck = false;
     eloDiv.textContent = eloVal;
     if(customText) eloDiv.style.color = customText;
-    rowDiv.appendChild(eloDiv);
 
     const badge = document.createElement('div');
     badge.className = 'badge ' + (rank === 1 ? 'b-gold' : rank === 2 ? 'b-silver' : rank === 3 ? 'b-bronze' : 'b-light');
@@ -1177,6 +1176,8 @@ function buildPoster(){
     ptsDiv.textContent = ptsVal;
     if(customText) ptsDiv.style.color = customText;
     rowDiv.appendChild(ptsDiv);
+
+    rowDiv.appendChild(eloDiv);
 
     const arrow = document.createElement('div');
     arrow.className = 'arrow';
@@ -1261,7 +1262,24 @@ async function exportImage(format){
      rango de una tabla de 20 equipos con logos y texto grandes y legibles, en vez de
      una imagen enorme y angosta. La vista "dos columnas" sigue usando scale:4. */
   const scale = state.layoutMode === 'columns' ? 4 : 2;
-  const canvas = await html2canvas(poster, { scale, backgroundColor: null, useCORS: true, imageTimeout: 15000, ignoreElements: (node) => node.classList && node.classList.contains('no-export') });
+  /* html2canvas no soporta "background-clip:text", así que el degradado del segundo
+     renglón del título ("FOOTBALL") sale como un recuadro vacío en la imagen exportada
+     aunque se ve bien en pantalla. onclone corrige solo la copia que se rasteriza,
+     cambiándolo a un color sólido legible, sin tocar el degradado que se ve en vivo. */
+  const canvas = await html2canvas(poster, {
+    scale, backgroundColor: null, useCORS: true, imageTimeout: 15000,
+    ignoreElements: (node) => node.classList && node.classList.contains('no-export'),
+    onclone: (clonedDoc) => {
+      const line2 = clonedDoc.querySelector('#poster .wordmark .line2');
+      if(line2){
+        line2.style.background = 'none';
+        line2.style.webkitBackgroundClip = 'border-box';
+        line2.style.backgroundClip = 'border-box';
+        line2.style.webkitTextFillColor = '#8b6cf5';
+        line2.style.color = '#8b6cf5';
+      }
+    }
+  });
   const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
   const quality = format === 'jpg' ? 0.98 : undefined;
   const dataUrl = canvas.toDataURL(mime, quality);
