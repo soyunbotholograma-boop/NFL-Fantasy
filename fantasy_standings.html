@@ -135,7 +135,7 @@
   /* Banner */
   .banner{
     position:relative;
-    padding:24px 26px 20px;
+    padding:16px 22px 12px;
     overflow:hidden;
   }
   .banner::before{
@@ -149,15 +149,15 @@
     position:relative; z-index:1;
     display:inline-block;
     font-family:'Oswald',sans-serif; font-weight:700; font-style:italic; text-transform:uppercase;
-    letter-spacing:1px; font-size:13px; color:var(--chalk);
+    letter-spacing:1px; font-size:11.5px; color:var(--chalk);
     background:linear-gradient(100deg, var(--blue) 0%, #1626a8 100%);
-    padding:7px 22px 7px 14px; margin-bottom:16px;
+    padding:5px 18px 5px 12px; margin-bottom:10px;
     clip-path: polygon(0 0, 100% 0, 86% 100%, 0% 100%);
     outline:none; border:none; cursor:text;
   }
-  .banner-main{position:relative; z-index:1; display:flex; align-items:center; gap:14px;}
+  .banner-main{position:relative; z-index:1; display:flex; align-items:center; gap:12px;}
   .nfl-slot{
-    width:56px;height:56px;border-radius:10px;flex-shrink:0;
+    width:42px;height:42px;border-radius:9px;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
     background:rgba(255,255,255,0.04); border:1.5px dashed rgba(255,255,255,0.25);
     cursor:pointer; overflow:hidden;
@@ -165,17 +165,17 @@
   .nfl-slot img{width:100%;height:100%;object-fit:contain;}
   .nfl-slot svg{width:70%;height:70%;}
   .wordmark{font-family:'Archivo Black', 'Oswald', sans-serif; font-style:italic; line-height:0.95;}
-  .wordmark .line1{font-size:38px; color:var(--chalk); letter-spacing:0.5px;}
+  .wordmark .line1{font-size:29px; color:var(--chalk); letter-spacing:0.5px;}
   .wordmark .line2{
-    font-size:38px; letter-spacing:0.5px;
+    font-size:29px; letter-spacing:0.5px;
     background: linear-gradient(100deg, var(--purple) 10%, var(--blue) 100%);
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
   .semana-badge{
     position:relative; z-index:1;
-    margin-top:10px;
+    margin-top:6px;
     font-family:'Archivo Black', sans-serif; font-style:italic;
-    font-size:20px; letter-spacing:1px;
+    font-size:15px; letter-spacing:1px;
     color:var(--purple);
   }
   .semana-badge input{
@@ -192,7 +192,7 @@
   .col-header span{font-weight:600;letter-spacing:1.2px;color:var(--chalk-dim);text-transform:uppercase;}
   .col-header .c-rd, .col-header .c-elo, .col-header .c-pts, .col-header .c-logo{text-align:center;}
 
-  #poster.layout-list .col-header{ display:grid; grid-template-columns:26px 24px 1fr 30px 36px 42px 18px 24px; font-size:9.5px; }
+  #poster.layout-list .col-header{ display:grid; grid-template-columns:30px 34px 1fr 34px 40px 46px 20px 24px; font-size:10px; }
   #poster.layout-columns .col-header{ display:none; }
 
   .rows{position:relative; z-index:1; padding:0 16px 16px;}
@@ -203,9 +203,9 @@
   }
   #poster.layout-list .rowline{
     display:grid;
-    grid-template-columns:26px 24px 1fr 30px 36px 42px 18px 24px;
-    min-height:30px;
-    margin-bottom:4px;
+    grid-template-columns:30px 34px 1fr 34px 40px 46px 20px 24px;
+    min-height:38px;
+    margin-bottom:5px;
   }
   .rows-2col{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;}
   .col-block .col-mini-header{
@@ -223,7 +223,7 @@
   .rowline.light{background:linear-gradient(100deg, rgba(139,108,245,0.14) 0%, rgba(43,62,245,0.16) 100%), var(--panel-2);}
 
   .badge{display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px;color:var(--field);}
-  #poster.layout-list .badge{width:22px;height:20px;font-size:10.5px;margin-left:4px;}
+  #poster.layout-list .badge{width:26px;height:24px;font-size:12px;margin-left:4px;}
   #poster.layout-columns .badge{width:17px;height:16px;font-size:9px;margin-left:2px;}
   .badge.b-gold{background:var(--gold);}
   .badge.b-silver{background:var(--silver);}
@@ -231,7 +231,7 @@
   .badge.b-light{background:rgba(255,255,255,0.14);color:var(--chalk);}
 
   .team-logo{
-    width:20px;height:20px;border-radius:5px;justify-self:center;
+    width:28px;height:28px;border-radius:6px;justify-self:center;
     display:flex;align-items:center;justify-content:center;overflow:hidden;
     background:rgba(255,255,255,0.06);cursor:pointer;
     background-size:contain;background-position:center;background-repeat:no-repeat;
@@ -240,21 +240,21 @@
   .team-logo .plus{font-size:10px;color:rgba(255,255,255,0.35);}
 
   .nm{font-weight:600;letter-spacing:0.2px;text-transform:uppercase;padding-left:8px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #poster.layout-list .nm{font-size:11px;}
+  #poster.layout-list .nm{font-size:13.5px;}
   #poster.layout-columns .nm{font-size:9px;padding-left:5px;}
   .rowline.dark .nm, .rowline.light .nm{color:#fff;}
 
   .rd, .elo, .pts{text-align:center;font-weight:600;outline:none;font-variant-numeric:tabular-nums;}
-  #poster.layout-list .rd, #poster.layout-list .elo{font-size:10px;}
-  #poster.layout-list .pts{font-weight:700;font-size:11.5px;}
+  #poster.layout-list .rd, #poster.layout-list .elo{font-size:11.5px;}
+  #poster.layout-list .pts{font-weight:700;font-size:13.5px;}
   #poster.layout-columns .rd, #poster.layout-columns .elo{font-size:8.5px;}
   #poster.layout-columns .pts{font-weight:700;font-size:9.5px;}
   .rowline.dark .rd, .rowline.dark .elo, .rowline.dark .pts,
   .rowline.light .rd, .rowline.light .elo, .rowline.light .pts{color:#dfe3e8;}
 
   .arrow{justify-self:center;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-  #poster.layout-list .arrow{width:16px;height:16px;}
-  #poster.layout-list .arrow svg{width:13px;height:13px;}
+  #poster.layout-list .arrow{width:18px;height:18px;}
+  #poster.layout-list .arrow svg{width:15px;height:15px;}
   #poster.layout-columns .arrow{width:12px;height:12px;}
   #poster.layout-columns .arrow svg{width:9px;height:9px;}
 
@@ -847,19 +847,11 @@ document.querySelectorAll('.layout-opt').forEach(btn => {
 /* ============================================================
    LOGO UPLOADS
    ============================================================ */
-/* El balón placeholder se guarda como <img> con un data-URI (en vez de <svg> vivo en el DOM)
-   porque html2canvas re-dibuja los <svg> inline con bugs de anti-aliasing/clip que lo
-   convertían en un blob borroso al exportar; un <img> lo rasteriza igual que cualquier logo. */
-const FOOTBALL_ICON_URL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
-  '<ellipse cx="32" cy="32" rx="30" ry="19" fill="#7a4522" stroke="#3a2110" stroke-width="2"/>' +
-  '<line x1="20" y1="32" x2="44" y2="32" stroke="#e9dcc9" stroke-width="2"/>' +
-  '<line x1="25" y1="27" x2="25" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>' +
-  '<line x1="30" y1="27" x2="30" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>' +
-  '<line x1="35" y1="27" x2="35" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>' +
-  '<line x1="40" y1="27" x2="40" y2="37" stroke="#e9dcc9" stroke-width="1.6"/>' +
-  '</svg>'
-);
+/* El balón placeholder se guarda como PNG rasterizado (en vez de un data-URI de <svg>)
+   porque html2canvas no dibuja <img src="data:image/svg+xml...">: al exportar, esa celda
+   sale completamente vacía (se probó pixel por pixel sobre el canvas exportado). Un PNG
+   se trata igual que cualquier logo subido y sí aparece en la imagen final. */
+const FOOTBALL_ICON_URL = 'data:image/png;base64,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';
 function renderNflLogo(){
   const slotPanel = el('nflLogoSlot');
   const slotPoster = el('nflSlotPoster');
