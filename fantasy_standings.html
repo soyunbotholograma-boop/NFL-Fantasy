@@ -113,7 +113,7 @@
   /* ---------- POSTER ---------- */
   .stage{display:flex;justify-content:center;}
   #poster{
-    width:460px;
+    width:800px;
     background:
       radial-gradient(ellipse 900px 620px at 4% 100%, rgba(43,62,245,0.35) 0%, rgba(43,62,245,0) 60%),
       linear-gradient(165deg, #060a26 0%, #050814 55%, #000 100%);
@@ -192,7 +192,7 @@
   .col-header span{font-weight:600;letter-spacing:1.2px;color:var(--chalk-dim);text-transform:uppercase;}
   .col-header .c-rd, .col-header .c-elo, .col-header .c-pts, .col-header .c-logo{text-align:center;}
 
-  #poster.layout-list .col-header{ display:grid; grid-template-columns:30px 34px 1fr 34px 40px 46px 20px 24px; font-size:10px; }
+  #poster.layout-list .col-header{ display:grid; grid-template-columns:46px 34px 40px 1fr 40px 54px 22px 24px; font-size:11px; }
   #poster.layout-columns .col-header{ display:none; }
 
   .rows{position:relative; z-index:1; padding:0 16px 16px;}
@@ -203,7 +203,7 @@
   }
   #poster.layout-list .rowline{
     display:grid;
-    grid-template-columns:30px 34px 1fr 34px 40px 46px 20px 24px;
+    grid-template-columns:46px 34px 40px 1fr 40px 54px 22px 24px;
     min-height:38px;
     margin-bottom:5px;
   }
@@ -214,7 +214,7 @@
   }
   #poster.layout-columns .rowline{
     display:grid;
-    grid-template-columns:20px 1fr 22px 24px 28px 14px 18px;
+    grid-template-columns:24px 20px 1fr 22px 28px 14px 18px;
     min-height:24px;
     margin-bottom:3px;
     padding:0 4px;
@@ -223,7 +223,7 @@
   .rowline.light{background:linear-gradient(100deg, rgba(139,108,245,0.14) 0%, rgba(43,62,245,0.16) 100%), var(--panel-2);}
 
   .badge{display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px;color:var(--field);}
-  #poster.layout-list .badge{width:26px;height:24px;font-size:12px;margin-left:4px;}
+  #poster.layout-list .badge{width:30px;height:28px;font-size:13px;margin-left:4px;}
   #poster.layout-columns .badge{width:17px;height:16px;font-size:9px;margin-left:2px;}
   .badge.b-gold{background:var(--gold);}
   .badge.b-silver{background:var(--silver);}
@@ -231,7 +231,7 @@
   .badge.b-light{background:rgba(255,255,255,0.14);color:var(--chalk);}
 
   .team-logo{
-    width:28px;height:28px;border-radius:6px;justify-self:center;
+    width:34px;height:34px;border-radius:7px;justify-self:center;
     display:flex;align-items:center;justify-content:center;overflow:hidden;
     background:rgba(255,255,255,0.06);cursor:pointer;
     background-size:contain;background-position:center;background-repeat:no-repeat;
@@ -240,21 +240,21 @@
   .team-logo .plus{font-size:10px;color:rgba(255,255,255,0.35);}
 
   .nm{font-weight:600;letter-spacing:0.2px;text-transform:uppercase;padding-left:8px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #poster.layout-list .nm{font-size:13.5px;}
+  #poster.layout-list .nm{font-size:16px;}
   #poster.layout-columns .nm{font-size:9px;padding-left:5px;}
   .rowline.dark .nm, .rowline.light .nm{color:#fff;}
 
   .rd, .elo, .pts{text-align:center;font-weight:600;outline:none;font-variant-numeric:tabular-nums;}
-  #poster.layout-list .rd, #poster.layout-list .elo{font-size:11.5px;}
-  #poster.layout-list .pts{font-weight:700;font-size:13.5px;}
+  #poster.layout-list .rd, #poster.layout-list .elo{font-size:13.5px;}
+  #poster.layout-list .pts{font-weight:700;font-size:16px;}
   #poster.layout-columns .rd, #poster.layout-columns .elo{font-size:8.5px;}
   #poster.layout-columns .pts{font-weight:700;font-size:9.5px;}
   .rowline.dark .rd, .rowline.dark .elo, .rowline.dark .pts,
   .rowline.light .rd, .rowline.light .elo, .rowline.light .pts{color:#dfe3e8;}
 
   .arrow{justify-self:center;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-  #poster.layout-list .arrow{width:18px;height:18px;}
-  #poster.layout-list .arrow svg{width:15px;height:15px;}
+  #poster.layout-list .arrow{width:22px;height:22px;}
+  #poster.layout-list .arrow svg{width:18px;height:18px;}
   #poster.layout-columns .arrow{width:12px;height:12px;}
   #poster.layout-columns .arrow svg{width:9px;height:9px;}
 
@@ -455,11 +455,11 @@
       </div>
 
       <div class="col-header">
+        <span class="c-elo">Elo</span>
         <span class="c-no">NO</span>
         <span class="c-logo"></span>
         <span class="c-name">NOMBRE</span>
         <span class="c-rd">Rd</span>
-        <span class="c-elo">Elo</span>
         <span class="c-pts">Pts</span>
         <span class="c-arrow"></span>
         <span class="c-color"></span>
@@ -1129,6 +1129,12 @@ function buildPoster(){
     const customText = customColor ? pickTextColor(customColor) : null;
     if(customColor) rowDiv.style.backgroundColor = customColor;
 
+    const eloDiv = document.createElement('div');
+    eloDiv.className = 'elo'; eloDiv.contentEditable = 'true'; eloDiv.spellcheck = false;
+    eloDiv.textContent = eloVal;
+    if(customText) eloDiv.style.color = customText;
+    rowDiv.appendChild(eloDiv);
+
     const badge = document.createElement('div');
     badge.className = 'badge ' + (rank === 1 ? 'b-gold' : rank === 2 ? 'b-silver' : rank === 3 ? 'b-bronze' : 'b-light');
     badge.textContent = rank;
@@ -1165,12 +1171,6 @@ function buildPoster(){
     rd.textContent = rdVal;
     if(customText) rd.style.color = customText;
     rowDiv.appendChild(rd);
-
-    const eloDiv = document.createElement('div');
-    eloDiv.className = 'elo'; eloDiv.contentEditable = 'true'; eloDiv.spellcheck = false;
-    eloDiv.textContent = eloVal;
-    if(customText) eloDiv.style.color = customText;
-    rowDiv.appendChild(eloDiv);
 
     const ptsDiv = document.createElement('div');
     ptsDiv.className = 'pts'; ptsDiv.contentEditable = 'true'; ptsDiv.spellcheck = false;
@@ -1256,7 +1256,12 @@ function cycleArrow(arrowEl){
 async function exportImage(format){
   const poster = el('poster');
   document.activeElement && document.activeElement.blur();
-  const canvas = await html2canvas(poster, { scale: 4, backgroundColor: null, useCORS: true, imageTimeout: 15000, ignoreElements: (node) => node.classList && node.classList.contains('no-export') });
+  /* La lista compacta ahora es un póster ancho (800px CSS) tipo tabla, no una tira
+     angosta tipo story — con scale:2 el PNG final queda ~1600-2000px de ancho, en el
+     rango de una tabla de 20 equipos con logos y texto grandes y legibles, en vez de
+     una imagen enorme y angosta. La vista "dos columnas" sigue usando scale:4. */
+  const scale = state.layoutMode === 'columns' ? 4 : 2;
+  const canvas = await html2canvas(poster, { scale, backgroundColor: null, useCORS: true, imageTimeout: 15000, ignoreElements: (node) => node.classList && node.classList.contains('no-export') });
   const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
   const quality = format === 'jpg' ? 0.98 : undefined;
   const dataUrl = canvas.toDataURL(mime, quality);
