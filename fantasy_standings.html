@@ -151,11 +151,11 @@
     flex:0 0 auto;transform:rotate(-90deg);
     white-space:nowrap;text-align:center;
   }
-  .wordmark{font-family:'Archivo Black','Oswald',sans-serif;font-style:italic;line-height:1.0;}
+  .wordmark{font-family:'Archivo Black','Oswald',sans-serif;font-style:italic;line-height:1.0;margin-top:14px;}
   .wordmark .line1{font-size:34px;letter-spacing:0.5px;color:#fff;}
   .wordmark .line2{font-size:34px;letter-spacing:0.5px;color:rgba(255,255,255,0.58);}
   .semana-badge{
-    margin-top:8px;font-family:'Oswald',sans-serif;font-weight:600;
+    font-family:'Oswald',sans-serif;font-weight:600;
     font-size:16px;letter-spacing:3px;color:rgba(255,255,255,0.9);text-transform:uppercase;
   }
   .semana-badge input{
@@ -163,14 +163,15 @@
     border-bottom:1.5px solid rgba(255,255,255,0.45);text-align:center;
   }
   .league-tag{
-    display:block;margin-top:10px;
-    font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;
-    letter-spacing:3.4px;font-size:11px;color:rgba(255,255,255,0.72);
+    display:block;margin-top:6px;
+    font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;
+    letter-spacing:1.6px;font-size:19px;color:#fff;
     outline:none;border:none;cursor:text;
   }
   #poster.layout-columns .wordmark .line1,
   #poster.layout-columns .wordmark .line2{font-size:27px;}
   #poster.layout-columns .semana-badge{font-size:13px;}
+  #poster.layout-columns .league-tag{font-size:15px;}
 
   /* ---------- right card ---------- */
   .card{
@@ -476,12 +477,12 @@
           <img class="football-icon" alt="football" style="width:70%;height:70%;">
         </div>
         <div class="band-title-wrap"><div class="band-title">
+          <div class="semana-badge">SEMANA <input type="text" id="semanaNumDisplay" value="1"></div>
+          <div class="league-tag" id="leagueTagDisplay" contenteditable="true">RAMIREZ Y AMIGOS</div>
           <div class="wordmark">
             <div class="line1">FANTASY</div>
             <div class="line2">FOOTBALL</div>
           </div>
-          <div class="semana-badge">SEMANA <input type="text" id="semanaNumDisplay" value="1"></div>
-          <div class="league-tag" id="leagueTagDisplay" contenteditable="true">RAMIREZ Y AMIGOS</div>
         </div></div>
       </div>
 
@@ -908,14 +909,23 @@ document.querySelectorAll('.theme-opt').forEach(btn => {
    sale completamente vacía (se probó pixel por pixel sobre el canvas exportado). Un PNG
    se trata igual que cualquier logo subido y sí aparece en la imagen final. */
 const FOOTBALL_ICON_URL = 'data:image/png;base64,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';
+/* El logo subido se pinta en el póster como background-image (no <img
+   object-fit:contain>): html2canvas 1.4.1 recorta/desplaza esos <img> al
+   exportar (se ve bien en pantalla pero sale cortado en el PNG). Con
+   background-image + background-size:contain exporta igual que en pantalla. */
 function renderNflLogo(){
   const slotPanel = el('nflLogoSlot');
   const slotPoster = el('nflSlotPoster');
   if(state.nflLogo){
     slotPanel.innerHTML = '<img src="'+state.nflLogo+'" alt="logo">';
-    slotPoster.innerHTML = '<img src="'+crispLogo(state.nflLogo, renderNflLogo)+'" alt="logo">';
+    slotPoster.innerHTML = '';
+    slotPoster.style.backgroundImage = 'url("'+crispLogo(state.nflLogo, renderNflLogo)+'")';
+    slotPoster.style.backgroundSize = 'contain';
+    slotPoster.style.backgroundPosition = 'center';
+    slotPoster.style.backgroundRepeat = 'no-repeat';
   } else {
     slotPanel.innerHTML = '<span class="plus">+</span>';
+    slotPoster.style.backgroundImage = 'none';
     slotPoster.innerHTML = '<img class="football-icon" src="'+FOOTBALL_ICON_URL+'" alt="football" style="width:70%;height:70%;">';
   }
 }
@@ -1193,32 +1203,20 @@ function buildPoster(){
     const total = toNumber(r[totalField]);
     const weekly = weeklyField ? toNumber(r[weeklyField]) : 0;
     const noRaw = noField ? (r[noField] || '').toString().trim() : '';
-    return {...r, __total: total, __weekly: weekly, __prevTotal: total - weekly, __noRaw: noRaw, __noNum: toNumber(noRaw)};
+    return {...r, __total: total, __weekly: weekly, __noRaw: noRaw, __noNum: toNumber(noRaw)};
   });
-
-  /* Trend arrows always track movement by Total (this week vs. last), regardless
-     of what's shown in the position badge — so we keep a Total-based rank map
-     for that, separate from the badge label/order below. */
-  const totalRanked = [...enriched].sort((a,b) => b.__total - a.__total).map((r,i) => ({...r, __totalRank: i+1}));
-  const totalRankMap = {};
-  totalRanked.forEach(r => { totalRankMap[playerLogoKey(r[nameField])] = r.__totalRank; });
 
   /* Badge number/order: if a Posición/No column is mapped, use it as-is (both for
      sorting and for the number shown) instead of recalculating 1,2,3... from Total —
      the sheet's own numbering (manual tie-breaks, etc.) wins. */
   const sorted = noField
     ? [...enriched].sort((a,b) => a.__noNum - b.__noNum)
-    : totalRanked;
+    : [...enriched].sort((a,b) => b.__total - a.__total);
   const currentRanked = sorted.map((r,i) => ({
     ...r,
-    __rank: totalRankMap[playerLogoKey(r[nameField])] || (i+1),
     __badgeNum: noField ? (r.__noNum || (i+1)) : (i+1),
     __badgeLabel: noField ? (r.__noRaw || String(i+1)) : String(i+1)
   }));
-
-  const prevRanked = [...enriched].sort((a,b) => b.__prevTotal - a.__prevTotal).map((r,i) => ({...r, __prevRank: i+1}));
-  const prevRankMap = {};
-  prevRanked.forEach(r => { prevRankMap[playerLogoKey(r[nameField])] = r.__prevRank; });
 
   const container = el('rowsContainer');
   container.innerHTML = '';
@@ -1226,7 +1224,6 @@ function buildPoster(){
   /* Builds one row. `i` only drives the dark/light stripe alternation, so each
      column in the two-column layout restarts its own stripe pattern at 0. */
   function buildRow(r, i){
-    const rank = r.__rank;
     const badgeNum = r.__badgeNum;
     const badgeLabel = r.__badgeLabel;
     const name = (r[nameField] || '').toString();
@@ -1235,14 +1232,7 @@ function buildPoster(){
     const ptsVal = r.__total;
     const eloVal = eloField ? (r[eloField] || '') : '';
 
-    let trend = 'flat';
-    if(weeklyField){
-      const prevRank = prevRankMap[key];
-      if(prevRank !== undefined){
-        if(prevRank > rank) trend = 'up';
-        else if(prevRank < rank) trend = 'down';
-      }
-    }
+    const trend = 'flat';
 
     const rowDiv = document.createElement('div');
     const isDark = badgeNum <= 3 ? true : (i % 2 === 0);
