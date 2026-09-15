@@ -135,23 +135,24 @@
   }
   .nfl-slot{
     position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:2;
-    width:54px;height:54px;border-radius:12px;
+    width:70px;height:70px;border-radius:14px;
     display:flex;align-items:center;justify-content:center;
     background:rgba(255,255,255,0.10);border:1.5px dashed rgba(255,255,255,0.4);
     cursor:pointer;overflow:hidden;
   }
   .nfl-slot img{width:100%;height:100%;object-fit:contain;}
-  #poster.layout-columns .nfl-slot{width:44px;height:44px;top:18px;}
+  #poster.layout-columns .nfl-slot{width:56px;height:56px;top:18px;}
 
   .band-title-wrap{
-    position:absolute;top:92px;right:24px;bottom:0;left:0;z-index:2;
+    position:absolute;top:104px;right:24px;bottom:0;left:0;z-index:2;
     display:flex;align-items:center;justify-content:center;
   }
   .band-title{
     flex:0 0 auto;transform:rotate(-90deg);
     white-space:nowrap;text-align:center;
+    display:flex;align-items:center;gap:18px;
   }
-  .wordmark{font-family:'Archivo Black','Oswald',sans-serif;font-style:italic;line-height:1.0;margin-top:14px;}
+  .wordmark{font-family:'Archivo Black','Oswald',sans-serif;font-style:italic;line-height:1.0;}
   .wordmark .line1{font-size:34px;letter-spacing:0.5px;color:#fff;}
   .wordmark .line2{font-size:34px;letter-spacing:0.5px;color:rgba(255,255,255,0.58);}
   .semana-badge{
@@ -163,7 +164,7 @@
     border-bottom:1.5px solid rgba(255,255,255,0.45);text-align:center;
   }
   .league-tag{
-    display:block;margin-top:6px;
+    display:block;
     font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;
     letter-spacing:1.6px;font-size:19px;color:#fff;
     outline:none;border:none;cursor:text;
@@ -477,12 +478,12 @@
           <img class="football-icon" alt="football" style="width:70%;height:70%;">
         </div>
         <div class="band-title-wrap"><div class="band-title">
-          <div class="semana-badge">SEMANA <input type="text" id="semanaNumDisplay" value="1"></div>
-          <div class="league-tag" id="leagueTagDisplay" contenteditable="true">RAMIREZ Y AMIGOS</div>
           <div class="wordmark">
             <div class="line1">FANTASY</div>
             <div class="line2">FOOTBALL</div>
           </div>
+          <div class="league-tag" id="leagueTagDisplay" contenteditable="true">RAMIREZ Y AMIGOS</div>
+          <div class="semana-badge">SEMANA <input type="text" id="semanaNumDisplay" value="1"></div>
         </div></div>
       </div>
 
@@ -1390,6 +1391,11 @@ async function exportImage(format){
         line2.style.backgroundClip = 'border-box';
         line2.style.webkitTextFillColor = 'rgba(255,255,255,0.58)';
         line2.style.color = 'rgba(255,255,255,0.58)';
+      }
+      const nflSlot = clonedDoc.getElementById('nflSlotPoster');
+      if(nflSlot){
+        nflSlot.style.border = 'none';
+        if(state.nflLogo) nflSlot.style.backgroundColor = 'transparent';
       }
     }
   });
