@@ -153,26 +153,29 @@
     display:flex;align-items:center;gap:18px;
   }
   .wordmark{font-family:'Archivo Black','Oswald',sans-serif;font-style:italic;line-height:1.0;}
-  .wordmark .line1{font-size:34px;letter-spacing:0.5px;color:#fff;}
-  .wordmark .line2{font-size:34px;letter-spacing:0.5px;color:rgba(255,255,255,0.58);}
-  .semana-badge{
-    font-family:'Oswald',sans-serif;font-weight:600;
-    font-size:16px;letter-spacing:3px;color:rgba(255,255,255,0.9);text-transform:uppercase;
+  .wordmark .line1{font-size:42px;letter-spacing:0.5px;color:#fff;}
+  .wordmark .line2{font-size:42px;letter-spacing:0.5px;color:rgba(255,255,255,0.58);}
+  .semana-ribbon{
+    display:inline-flex;align-items:center;gap:8px;margin-top:6px;
+    background:var(--gold);color:#221c00;
+    padding:6px 18px 8px;
+    clip-path:polygon(1.5% 14%, 98% 0%, 100% 84%, 3% 100%);
+    font-family:'Archivo Black','Oswald',sans-serif;font-style:italic;letter-spacing:1px;
+    font-size:19px;white-space:nowrap;text-transform:uppercase;
   }
-  .semana-badge input{
-    background:none;border:none;color:inherit;font:inherit;letter-spacing:2px;width:46px;outline:none;
-    border-bottom:1.5px solid rgba(255,255,255,0.45);text-align:center;
+  .semana-ribbon input{
+    background:none;border:none;color:inherit;font:inherit;letter-spacing:1px;width:32px;outline:none;text-align:center;
   }
   .league-tag{
     display:block;
     font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;
-    letter-spacing:1.6px;font-size:19px;color:#fff;
+    letter-spacing:1.6px;font-size:23px;color:#fff;
     outline:none;border:none;cursor:text;
   }
   #poster.layout-columns .wordmark .line1,
-  #poster.layout-columns .wordmark .line2{font-size:27px;}
-  #poster.layout-columns .semana-badge{font-size:13px;}
-  #poster.layout-columns .league-tag{font-size:15px;}
+  #poster.layout-columns .wordmark .line2{font-size:32px;}
+  #poster.layout-columns .semana-ribbon{font-size:14px;padding:4px 12px 6px;}
+  #poster.layout-columns .league-tag{font-size:18px;}
 
   /* ---------- right card ---------- */
   .card{
@@ -483,7 +486,7 @@
             <div class="line2">FOOTBALL</div>
           </div>
           <div class="league-tag" id="leagueTagDisplay" contenteditable="true">RAMIREZ Y AMIGOS</div>
-          <div class="semana-badge">SEMANA <input type="text" id="semanaNumDisplay" value="1"></div>
+          <div class="semana-ribbon">SEMANA <input type="text" id="semanaNumDisplay" value="1"></div>
         </div></div>
       </div>
 
