@@ -202,16 +202,27 @@
     letter-spacing: calc(3.2px * var(--export-scale)); font-size: calc(13px * var(--export-scale));
     color:rgba(255,255,255,0.88);
   }
+  /* clip-path no lo respeta html2canvas (la cinta sale rectangular, no angulada): el
+     angulo se logra con skewX en el contenedor, y se corrige en sentido contrario adentro
+     para que el texto no quede inclinado. */
   .sl-ribbon{
-    display:inline-flex; align-items:center; gap: calc(11px * var(--export-scale));
+    display:inline-block;
     margin-top: calc(14px * var(--export-scale));
     background:#e0342a; color:#fff;
     padding: calc(7px * var(--export-scale)) calc(20px * var(--export-scale)) calc(9px * var(--export-scale));
-    clip-path: polygon(1.5% 14%, 98% 0%, 100% 84%, 3% 100%);
+    transform: skewX(-8deg);
     font-family:'Anton',sans-serif; font-style:italic; letter-spacing:1px;
     font-size: calc(22px * var(--export-scale)); white-space:nowrap;
   }
-  .sl-ribbon .sk{ font-family:'Inter',sans-serif; font-style:normal; font-size: calc(17px * var(--export-scale)); }
+  .sl-ribbon-inner{
+    display:inline-flex; align-items:center; gap: calc(11px * var(--export-scale));
+    transform: skewX(8deg);
+  }
+  /* El caracter unicode de calavera (&#9760;) no siempre lo dibuja html2canvas (sale en
+     blanco); un SVG inline si se exporta bien porque son trazos vectoriales, no una fuente. */
+  .sl-ribbon .sk{ width: calc(17px * var(--export-scale)); height: calc(17px * var(--export-scale)); display:inline-block; vertical-align:-0.12em; flex:0 0 auto; }
+  .sl-ribbon.has-image{ background:none; padding:0; transform:none; }
+  .sl-ribbon-img{ display:block; height: calc(40px * var(--export-scale)); width:auto; }
 
   .sl-card{
     position:relative; z-index:1; min-width:0;
@@ -491,7 +502,14 @@
           <div class="sl-band-title-wrap">
             <div class="sl-band-title">
               <div class="sub" id="tableSubtitle" style="display:none;">Tabla General</div>
-              <div class="sl-ribbon"><span class="sk">&#9760;</span>SURVIVOR<span class="sk">&#9760;</span></div>
+              <div class="sl-ribbon" id="survivorRibbon">
+                <span class="sl-ribbon-inner" id="survivorRibbonText">
+                  <svg class="sk" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2a8 8 0 0 0-8 8c0 3.14 1.67 5.86 4.17 7.35.1.36.17.75.17 1.15v1a1 1 0 0 0 1 1h1v-2h.9v2h1.52v-2h.9v2H17a1 1 0 0 0 1-1v-1c0-.4.07-.79.17-1.15C20.33 15.86 22 13.14 22 10a8 8 0 0 0-8-8zM9 13a1.75 1.75 0 1 1 0-3.5A1.75 1.75 0 0 1 9 13zm6 0a1.75 1.75 0 1 1 0-3.5A1.75 1.75 0 0 1 15 13zm-3 3.7c-1.28 0-2.4-.56-2.4-1.25h4.8c0 .69-1.12 1.25-2.4 1.25z"/></svg>
+                  SURVIVOR
+                  <svg class="sk" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2a8 8 0 0 0-8 8c0 3.14 1.67 5.86 4.17 7.35.1.36.17.75.17 1.15v1a1 1 0 0 0 1 1h1v-2h.9v2h1.52v-2h.9v2H17a1 1 0 0 0 1-1v-1c0-.4.07-.79.17-1.15C20.33 15.86 22 13.14 22 10a8 8 0 0 0-8-8zM9 13a1.75 1.75 0 1 1 0-3.5A1.75 1.75 0 0 1 9 13zm6 0a1.75 1.75 0 1 1 0-3.5A1.75 1.75 0 0 1 15 13zm-3 3.7c-1.28 0-2.4-.56-2.4-1.25h4.8c0 .69-1.12 1.25-2.4 1.25z"/></svg>
+                </span>
+                <img class="sl-ribbon-img" id="survivorRibbonImg" alt="Survivor" style="display:none;">
+              </div>
             </div>
           </div>
         </div>
@@ -627,6 +645,19 @@
       <p class="empty-note">Se muestra centrada y tenue detrás de la Tabla General, tanto en pantalla como al exportarla como PNG.</p>
 
       <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;">
+      <label style="display:block;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Cinta "SURVIVOR" <span style="text-transform:none;font-weight:400;color:var(--chalk-dim);">(opcional; si el PNG exportado sale sin calaveras o sin ángulo, sube tu propia imagen aquí)</span></label>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="logo-tile" style="width:140px;">
+          <div class="lt-preview" id="survivorRibbonPreview"><span class="lt-empty">Sin imagen</span></div>
+          <div class="lt-actions">
+            <label class="btn ghost small" style="cursor:pointer;">Subir<input type="file" id="survivorRibbonInput" accept="image/png,image/*" style="display:none;"></label>
+            <button class="btn danger small" id="btnRemoveSurvivorRibbon" style="display:none;">Quitar</button>
+          </div>
+        </div>
+      </div>
+      <p class="empty-note">Si subes una imagen, reemplaza el texto "SURVIVOR" y las calaveras de la Tabla General (pantalla y PNG) por tu PNG.</p>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;">
       <label style="display:block;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Sincronización en la nube <span style="text-transform:none;font-weight:400;color:var(--chalk-dim);">(opcional, jsonbin.io)</span></label>
       <div class="toolbar">
         <div class="group">
@@ -716,6 +747,7 @@ function defaultState(){
     teamLogos: {}, // teamAbbr -> base64 PNG data URL, e.g. teamLogos.BAL = 'data:image/png;base64,....'
     leagueLogo: null, // base64 PNG data URL del logo de la liga (opcional)
     tableWatermark: { image: null, opacity: 0.12 }, // marca de agua centrada detrás de la Tabla General
+    survivorRibbon: null, // base64 PNG opcional que reemplaza la cinta "SURVIVOR" (por si el navegador no exporta bien el texto/calaveras)
     schedule: {}, // weekKey -> [[visitante, local], ...] cargado desde el CSV del calendario
     maxAgainst: 5, // tope de veces que un jugador puede elegir contra el mismo rival
     missedPickCostsLife: false // si no elegir en una semana con resultados cuesta vida
@@ -725,7 +757,7 @@ function defaultState(){
 /* Las imagenes (escudos, logo, marca de agua) pesan MB y se guardan aparte; todo lo demas
    es "ligero". Antes cada lugar que guardaba armaba su propia lista de campos a mano, y un
    campo nuevo se quedaba fuera de alguno. */
-const HEAVY_KEYS = ['teamLogos', 'leagueLogo', 'tableWatermark'];
+const HEAVY_KEYS = ['teamLogos', 'leagueLogo', 'tableWatermark', 'survivorRibbon'];
 function corePayload(savedAt){
   const light = {};
   Object.keys(state).forEach(k=>{ if(!HEAVY_KEYS.includes(k)) light[k] = state[k]; });
@@ -793,7 +825,7 @@ function hasLocalStorage(){
 /* El bucket de "logos" guarda el escudo por equipo Y el logo de la liga juntos,
    porque ambos son im\u00e1genes pesadas que conviene escribir aparte de los datos ligeros. */
 function logosPayload(){
-  return JSON.stringify({ teamLogos: state.teamLogos, leagueLogo: state.leagueLogo || null, tableWatermark: state.tableWatermark || { image:null, opacity:0.12 } });
+  return JSON.stringify({ teamLogos: state.teamLogos, leagueLogo: state.leagueLogo || null, tableWatermark: state.tableWatermark || { image:null, opacity:0.12 }, survivorRibbon: state.survivorRibbon || null });
 }
 function applyLogosPayload(raw){
   const parsed = JSON.parse(raw);
@@ -801,6 +833,7 @@ function applyLogosPayload(raw){
     if(parsed.teamLogos) state.teamLogos = parsed.teamLogos;
     if(parsed.leagueLogo) state.leagueLogo = parsed.leagueLogo;
     if(parsed.tableWatermark) state.tableWatermark = parsed.tableWatermark;
+    if(parsed.survivorRibbon) state.survivorRibbon = parsed.survivorRibbon;
   } else if(parsed){
     // formato anterior: la llave guardaba directamente el mapa de escudos por equipo
     state.teamLogos = parsed;
@@ -1433,6 +1466,45 @@ document.getElementById('btnRemoveTableWatermark').addEventListener('click', ()=
   saveLogos();
   renderTableWatermark();
 });
+/* ---------------- RENDER: CINTA "SURVIVOR" PERSONALIZADA ---------------- */
+function renderSurvivorRibbon(){
+  const ribbon = document.getElementById('survivorRibbon');
+  const text = document.getElementById('survivorRibbonText');
+  const img = document.getElementById('survivorRibbonImg');
+  const preview = document.getElementById('survivorRibbonPreview');
+  const removeBtn = document.getElementById('btnRemoveSurvivorRibbon');
+  preview.innerHTML = state.survivorRibbon ? `<img src="${escapeHtml(state.survivorRibbon)}" alt="">` : '<span class="lt-empty">Sin imagen</span>';
+  removeBtn.style.display = state.survivorRibbon ? 'inline-flex' : 'none';
+  if(state.survivorRibbon){
+    ribbon.classList.add('has-image');
+    text.style.display = 'none';
+    img.src = state.survivorRibbon;
+    img.style.display = 'block';
+  } else {
+    ribbon.classList.remove('has-image');
+    text.style.display = '';
+    img.style.display = 'none';
+    img.removeAttribute('src');
+  }
+}
+document.getElementById('survivorRibbonInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    state.survivorRibbon = reader.result;
+    saveLogos();
+    renderSurvivorRibbon();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+document.getElementById('btnRemoveSurvivorRibbon').addEventListener('click', ()=>{
+  state.survivorRibbon = null;
+  saveLogos();
+  renderSurvivorRibbon();
+});
+
 /* saveLogos() serializa todas las imagenes; llamarlo en cada tick del slider trababa la pagina.
    La opacidad se ve al instante y el guardado espera a que se suelte el control. */
 let opacityTimer = null;
@@ -1632,9 +1704,9 @@ document.getElementById('btnExportAliveCards').addEventListener('click', (e)=> e
    quedaba repetido una vez por celda de la tabla y una por tarjeta: de ahi los 3.7 MB.
    Los contenedores generados se vacian antes de serializar (los datos reales viven en
    embeddedStateData) y se vuelven a dibujar despues. */
-const GENERATED_CONTAINERS = ['#mainTable','#cardsGrid','#picksGrid','#logosGrid','#teamChecks','#playersList tbody','#calWeekGames','#scheduleSummary','#tableWatermarkPreview'];
+const GENERATED_CONTAINERS = ['#mainTable','#cardsGrid','#picksGrid','#logosGrid','#teamChecks','#playersList tbody','#calWeekGames','#scheduleSummary','#tableWatermarkPreview','#survivorRibbonPreview'];
 // Imagenes cuyo src se vuelve a poner desde el estado al cargar: no hace falta guardarlas dos veces
-const GENERATED_IMAGES = ['#leagueLogoImg','#tableLogoImg','#tableWatermarkImg'];
+const GENERATED_IMAGES = ['#leagueLogoImg','#tableLogoImg','#tableWatermarkImg','#survivorRibbonImg'];
 async function saveHtmlFile(){
   updateEmbeddedStateInDom();
   const stash = [], srcStash = [];
@@ -1925,6 +1997,7 @@ function renderAll(){
   renderScoreboard();
   renderLeagueLogo();
   renderTableWatermark();
+  renderSurvivorRibbon();
   renderStorageNote();
   const active = document.querySelector('.tab-btn.active');
   const render = TAB_RENDERERS[active ? active.dataset.tab : 'tabla'];
