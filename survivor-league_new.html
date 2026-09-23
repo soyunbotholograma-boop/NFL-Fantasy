@@ -651,6 +651,8 @@
       <div class="toolbar">
         <span class="empty-note">Tarjeta individual de cada jugador. Puedes descargar cada una por separado.</span>
         <button class="btn" id="btnExportAllCards">Descargar todas (PNG)</button>
+        <button class="btn ghost small" id="btnExportAllCardsSeparate">Descargar cada una por separado (PNG)</button>
+        <button class="btn ghost small" id="btnExportAliveCards">Descargar solo vivos (PNG)</button>
       </div>
       <div class="cards-grid" id="cardsGrid"></div>
     </div>
@@ -1498,8 +1500,7 @@ function renderCardsTab(){
   grid.querySelectorAll('[data-card-export]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const p = state.players[+btn.dataset.cardExport];
-      const safeName = (p ? p.name : 'jugador').normalize('NFD').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '') || 'jugador';
-      exportElementAsPng(document.getElementById('card-'+btn.dataset.cardExport), 'tarjeta-'+safeName+'.png');
+      exportElementAsPng(document.getElementById('card-'+btn.dataset.cardExport), 'tarjeta-'+safePlayerFileName(p ? p.name : '')+'.png');
     });
   });
 }
@@ -1510,6 +1511,9 @@ function renderCardsTab(){
 function safeCanvasScale(el, wanted){
   const w = Math.max(1, el.scrollWidth), h = Math.max(1, el.scrollHeight);
   return Math.max(1, Math.min(wanted, 16000 / w, 16000 / h, Math.sqrt(16e6 / (w * h))));
+}
+function safePlayerFileName(name){
+  return (name || 'jugador').normalize('NFD').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '') || 'jugador';
 }
 function downloadBlob(blob, filename){
   const url = URL.createObjectURL(blob);
@@ -1599,6 +1603,29 @@ document.getElementById('btnExportTable').addEventListener('click', async ()=>{
 document.getElementById('btnExportAllCards').addEventListener('click', ()=>{
   exportElementAsPng(document.getElementById('cardsGrid'), 'survivor-league-tarjetas.png');
 });
+async function exportCardsIndividually(onlyAlive, btn){
+  const targets = state.players
+    .map((p, idx)=> ({ p, idx, alive: playerTimeline(p).lives > 0 }))
+    .filter(t=> !onlyAlive || t.alive);
+  if(!targets.length){ alert(onlyAlive ? 'No hay jugadores vivos.' : 'No hay jugadores.'); return; }
+  const prevLabel = btn.textContent;
+  btn.disabled = true;
+  try{
+    for(let i=0; i<targets.length; i++){
+      const { p, idx } = targets[i];
+      const el = document.getElementById('card-'+idx);
+      if(!el) continue;
+      btn.textContent = `Descargando ${i+1}/${targets.length}...`;
+      await exportElementAsPng(el, 'tarjeta-'+safePlayerFileName(p.name)+'.png');
+      await new Promise(r=> setTimeout(r, 250));
+    }
+  } finally {
+    btn.textContent = prevLabel;
+    btn.disabled = false;
+  }
+}
+document.getElementById('btnExportAllCardsSeparate').addEventListener('click', (e)=> exportCardsIndividually(false, e.currentTarget));
+document.getElementById('btnExportAliveCards').addEventListener('click', (e)=> exportCardsIndividually(true, e.currentTarget));
 
 /* ---------------- GUARDAR ARCHIVO HTML (con los datos horneados adentro) ---------------- */
 /* El HTML se guardaba serializando el DOM ya renderizado, asi que cada escudo base64
