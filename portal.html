@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Portal · Ramirez y Amigos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Oswald:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600;1,700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="css/survivor.css">
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+<div class="wrap" hidden>
+  <div class="session-bar">
+    <div class="back-home-bar"><a class="back-home" href="index.html">&larr; Inicio</a></div>
+    <div class="session-user">
+      <span id="sessionEmail"></span>
+      <a class="btn ghost small" id="adminLink" href="survivor-league_new.html" hidden>Admin</a>
+      <button class="btn ghost small" data-signout>Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="hero portal-hero">
+    <div>
+      <div class="league-tag">Ramirez y Amigos</div>
+      <div class="eyebrow">Temporada NFL · Mi Portal</div>
+      <h1><span class="t1">MIS</span><span class="t2">PICKS</span></h1>
+    </div>
+    <div class="me-box">
+      <div class="me-name" id="meName"></div>
+      <div class="me-lives" id="meLives"></div>
+      <div class="pub-note" id="pubNote"></div>
+    </div>
+  </div>
+
+  <div class="portal-msg" id="noPlayerMsg" hidden>Tu cuenta todavía no está ligada a un jugador. Pídele al admin que la ligue en la pestaña <b>Jugadores</b> del Survivor.</div>
+
+  <div id="portalMain">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="survivor">Survivor</button>
+      <button class="tab-btn" data-tab="pickem">Pick'em</button>
+      <button class="tab-btn" data-tab="posiciones">Posiciones</button>
+      <button class="tab-btn" data-tab="tabla">Tabla General</button>
+    </div>
+
+    <!-- SURVIVOR -->
+    <div class="tab-content active" id="tab-survivor">
+      <div class="panel">
+        <div class="toolbar">
+          <div class="group">
+            <label class="empty-note" for="svWeek">Semana:</label>
+            <select id="svWeek"></select>
+          </div>
+          <div class="group"><span class="empty-note">Cada pick se cierra cuando empieza el partido de ese equipo.</span></div>
+        </div>
+        <div class="pick-summary" id="svSummary"></div>
+        <div class="team-grid" id="svTeams"></div>
+        <div class="flash" id="svFlash" role="status"></div>
+        <div class="my-card-wrap">
+          <span class="section-lbl">Mi tarjeta</span>
+          <div id="myCard"></div>
+          <button class="btn ghost small" id="btnMyCard" style="margin-top:10px;">Descargar mi tarjeta (PNG)</button>
+          <p class="empty-note">Vidas y resultados según la última publicación del admin; tus picks nuevos aparecen como pendientes.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PICK'EM -->
+    <div class="tab-content" id="tab-pickem">
+      <div class="panel">
+        <div class="pk-head">
+          <div class="toolbar" style="margin:0;">
+            <div class="group">
+              <label class="empty-note" for="pkWeek">Semana:</label>
+              <select id="pkWeek"></select>
+            </div>
+          </div>
+          <div class="pk-points" id="pkPoints"></div>
+        </div>
+        <p class="empty-note">Elige al ganador de cada partido o <b>Cerrado</b> si crees que la diferencia será menor a <b class="tie-margin">6</b> puntos. Cada acierto vale 1 punto. Puedes cambiar tu pick hasta que empiece ese partido.</p>
+        <div class="pk-list" id="pkList"></div>
+        <div class="flash" id="pkFlash" role="status"></div>
+      </div>
+    </div>
+
+    <!-- POSICIONES -->
+    <div class="tab-content" id="tab-posiciones">
+      <div class="panel">
+        <div class="toolbar">
+          <div class="group">
+            <label class="empty-note" for="stWeek">Después de:</label>
+            <select id="stWeek"></select>
+          </div>
+          <div class="group"><span class="empty-note">Pick'em: puntos acumulados; el Elo mide qué tan bien te fue cada semana contra los demás.</span></div>
+        </div>
+        <div class="standings-scroll"><table class="standings" id="standingsTable"></table></div>
+      </div>
+    </div>
+
+    <!-- TABLA GENERAL -->
+    <div class="tab-content" id="tab-tabla">
+      <div class="panel">
+        <p class="empty-note">Tabla del survivor hasta la última semana publicada.</p>
+        <div id="tableExportArea">
+          <div class="sl-band">
+            <div class="sl-crest"><img class="table-logo" id="tableLogoImg" style="display:none;" alt="Logo de la liga"></div>
+            <div class="sl-band-title-wrap">
+              <div class="sl-band-title">
+                <div class="sl-ribbon" id="survivorRibbon">
+                  <span class="sl-ribbon-inner" id="survivorRibbonText">SURVIVOR</span>
+                  <img class="sl-ribbon-img" id="survivorRibbonImg" alt="Survivor" style="display:none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="sl-card">
+            <img id="tableWatermarkImg" class="table-watermark" alt="" style="display:none;">
+            <div class="sl-scroll" style="overflow-x:auto;">
+              <table class="survivor" id="mainTable"></table>
+            </div>
+            <div class="sl-foot">Solo el ultimo sobreviviente gana</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/league-core.js"></script>
+<script src="js/supa.js"></script>
+<script>
+/* =====================================================================
+   MI PORTAL
+   - Mis picks (survivor y pick'em): en vivo, directo de Supabase (solo los mios).
+   - Vidas, tarjeta, tabla general y posiciones: de la ultima publicacion del admin.
+   ===================================================================== */
+let state = null;      // estado con la forma que espera league-core.js (datos publicados)
+let games = [];
+let gamesById = {};
+let pub = null;        // ultima publicacion (null = el admin aun no publica)
+let me = null;         // { id, name, startingLives, rowColor, picks } con MIS picks en vivo
+let myPickem = {};     // game_id -> choice
+let currentUser = null;
+let pubChannel = null;
+
+const wrapEl = document.querySelector('.wrap');
+document.querySelectorAll('[data-signout]').forEach(b=> b.addEventListener('click', signOut));
+
+/* ---------------- CARGA ---------------- */
+async function loadPortal(){
+  const uid = currentUser.id;
+  const [gameRows, players, assets, settings, publication, profile] = await Promise.all([
+    loadGames(), loadPlayers(), loadAssets(), loadSettings(), loadLatestPublication(),
+    sbq(sb.from('profiles').select('is_admin').eq('user_id', uid).maybeSingle())
+  ]);
+  games = gameRows;
+  gamesById = Object.fromEntries(games.map(g=>[g.id, g]));
+  pub = publication;
+  document.getElementById('adminLink').hidden = !(profile && profile.is_admin);
+
+  const snap = pub ? pub.snapshot : null;
+  const sv = snap ? snap.survivor : null;
+  state = {
+    startingLivesDefault: sv ? sv.startingLivesDefault : (settings.startingLivesDefault ?? 3),
+    missedPickCostsLife: sv ? !!sv.missedPickCostsLife : !!settings.missedPickCostsLife,
+    maxAgainst: settings.maxAgainst || (sv && sv.maxAgainst) || 5,
+    showLogos: sv ? !!sv.showLogos : !!settings.showLogos,
+    tieMargin: snap ? snap.pickem.tieMargin : (settings.tieMargin || DEFAULT_TIE_MARGIN),
+    teamLogos: assets.teamLogos, leagueLogo: assets.leagueLogo,
+    tableWatermark: assets.tableWatermark, survivorRibbon: assets.survivorRibbon,
+    // Jugadores publicados; si aun no hay publicacion, la lista actual sin picks
+    players: sv ? sv.players : players.map(p=>({ id: p.id, name: p.name, startingLives: p.startingLives, rowColor: p.rowColor, picks: {} }))
+  };
+  applyGamesToState(state, games);          // calendario completo (para rivales y horarios)
+  state.finished = sv ? sv.finished : {};   // ...pero los resultados solo los publicados
+  state.results = sv ? sv.results : {};
+
+  const mine = players.find(p=>p.userId===uid);
+  if(!mine){ me = null; return; }
+  const published = state.players.find(p=>p.id===mine.id);
+  me = { id: mine.id, name: mine.name, rowColor: mine.rowColor,
+         startingLives: published ? published.startingLives : mine.startingLives, picks: {} };
+  await loadMyPicks();
+}
+async function loadMyPicks(){
+  const [sv, pk] = await Promise.all([
+    sbq(sb.from('survivor_picks').select('week,team').eq('player_id', me.id)),
+    sbAll(()=> sb.from('pickem_picks').select('game_id,choice').eq('player_id', me.id).order('game_id'))
+  ]);
+  me.picks = Object.fromEntries(sv.map(r=>[r.week, r.team]));
+  myPickem = Object.fromEntries(pk.map(r=>[r.game_id, r.choice]));
+}
+
+/* Semanas con partidos, en orden */
+function weeksWithGames(){ return WEEKS.filter(w=> games.some(g=>g.week===w.key)); }
+function fillWeekSelect(id, weeks, value){
+  const sel = document.getElementById(id);
+  sel.innerHTML = weeks.map(w=>`<option value="${w.key}">${w.label}</option>`).join('');
+  if(weeks.some(w=>w.key===value)) sel.value = value;
+}
+function flash(id, msg, isErr){
+  const el = document.getElementById(id);
+  el.textContent = msg || '';
+  el.className = 'flash' + (msg ? (isErr ? ' err' : ' ok') : '');
+}
+function dbError(err){
+  const m = (err && err.message) || String(err);
+  return m.replace(/^.*?:\s*(?=[A-ZÁÉÍÓÚ¿])/, '') || m;
+}
+
+/* ---------------- CABECERA ---------------- */
+function renderHero(){
+  document.getElementById('meName').textContent = me ? me.name : '';
+  const livesEl = document.getElementById('meLives');
+  if(me){
+    const tl = playerTimeline(me);
+    const start = me.startingLives ?? state.startingLivesDefault;
+    let pips = '';
+    for(let i=0;i<start;i++) pips += `<span class="pc-pip ${i<tl.lives?'':'off'}"></span>`;
+    livesEl.innerHTML = `${pips}<span>${tl.lives > 0 ? tl.lives + (tl.lives===1?' vida':' vidas') : 'Eliminado'}</span>`;
+  } else livesEl.innerHTML = '';
+  document.getElementById('pubNote').innerHTML = pub
+    ? `Tablas publicadas hasta <b>${escapeHtml(WEEK_LABEL[pub.through_week] || pub.through_week)}</b> · ${escapeHtml(new Date(pub.published_at).toLocaleString('es-MX', {dateStyle:'medium', timeStyle:'short'}))}`
+    : 'El admin todavía no publica tablas.';
+  document.querySelectorAll('.tie-margin').forEach(el=> el.textContent = state.tieMargin);
+}
+
+/* ---------------- SURVIVOR ---------------- */
+function gameOf(weekKey, abbr){ return games.find(g=>g.week===weekKey && (g.away===abbr || g.home===abbr)) || null; }
+function teamBadge(abbr){
+  const t = TEAM_MAP[abbr] || { c1: 'var(--line)' };
+  const logo = state.teamLogos[abbr];
+  return logo ? `<img src="${escapeHtml(logo)}" alt="${escapeHtml(abbr)}">` : `<span style="background:${t.c1};color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;">${escapeHtml(abbr)}</span>`;
+}
+function renderSurvivor(){
+  const weekKey = document.getElementById('svWeek').value;
+  const summary = document.getElementById('svSummary');
+  const grid = document.getElementById('svTeams');
+  const current = me.picks[weekKey] || null;
+  const curGame = current ? gameOf(weekKey, current) : null;
+  const weekLocked = !!(curGame && gameStarted(curGame));
+  const out = isOut(me);
+  const used = usedTeams(me, weekKey);
+  const against = againstCounts(me, weekKey);
+  const max = state.maxAgainst;
+
+  if(current){
+    const opp = opponentOf(weekKey, current);
+    summary.innerHTML = `<span>Tu pick de ${escapeHtml(WEEK_LABEL[weekKey])}:</span>${renderPickCell(current, weekStatus(me, weekKey), current)}<span class="empty-note">${opp ? 'vs ' + escapeHtml(opp) + ' · ' : ''}${weekLocked ? 'cerrado' : 'cierra ' + escapeHtml(formatKickoff(curGame && curGame.kickoff))}</span>`
+      + (weekLocked ? '' : ' <button class="btn ghost small" id="btnClearPick">Quitar pick</button>');
+  } else {
+    summary.innerHTML = out ? '<span class="empty-note">Ya estás eliminado según la última publicación.</span>' : `<span class="empty-note">Todavía no eliges equipo para ${escapeHtml(WEEK_LABEL[weekKey])}.</span>`;
+  }
+
+  const weekGames = games.filter(g=>g.week===weekKey);
+  if(!weekGames.length){ grid.innerHTML = '<p class="empty-note">Esta semana no tiene partidos cargados.</p>'; return; }
+  grid.innerHTML = TEAMS.map(t=>{
+    const g = gameOf(weekKey, t.abbr);
+    const opp = g ? (g.away===t.abbr ? g.home : g.away) : null;
+    const n = opp ? (against.get(opp) || 0) : 0;
+    let flag = '', disabled = false;
+    if(t.abbr === current) flag = 'Tu pick';
+    else if(!g){ flag = 'Descansa'; disabled = true; }
+    else if(used.has(t.abbr)){ flag = 'Usado'; disabled = true; }
+    else if(gameStarted(g)){ flag = 'Empezó'; disabled = true; }
+    else if(n >= max){ flag = `Tope vs ${opp}`; disabled = true; }
+    if(out || weekLocked) disabled = disabled || t.abbr !== current;
+    if(t.abbr === current) disabled = true;
+    const vs = g ? `${g.away===t.abbr ? '@' : 'vs'} ${opp}<br>${escapeHtml(formatKickoff(g.kickoff))}${n ? `<br>ya ${n}× vs ${opp}` : ''}` : 'Sin partido';
+    return `<button class="team-tile${t.abbr===current?' selected':''}" data-team="${t.abbr}" ${disabled?'disabled':''}>
+      ${flag ? `<span class="tt-flag">${escapeHtml(flag)}</span>` : ''}
+      <span class="tt-logo">${teamBadge(t.abbr)}</span>
+      <span class="tt-abbr">${t.abbr}</span>
+      <span class="tt-vs">${vs}</span>
+    </button>`;
+  }).join('');
+  grid.querySelectorAll('.team-tile:not(:disabled)').forEach(btn=>{
+    btn.addEventListener('click', ()=> saveSurvivorPick(weekKey, btn.dataset.team));
+  });
+  const clear = document.getElementById('btnClearPick');
+  if(clear) clear.addEventListener('click', ()=> saveSurvivorPick(weekKey, null));
+  renderMyCard();
+}
+async function saveSurvivorPick(weekKey, team){
+  if(team && me.picks[weekKey] && !confirm(`¿Cambiar tu pick de ${WEEK_LABEL[weekKey]} de ${me.picks[weekKey]} a ${team}?`)) return;
+  if(!team && !confirm(`¿Quitar tu pick de ${WEEK_LABEL[weekKey]}?`)) return;
+  flash('svFlash', 'Guardando…');
+  document.querySelectorAll('#svTeams .team-tile').forEach(b=> b.disabled = true);
+  try{
+    if(team) await sbq(sb.from('survivor_picks').upsert({ player_id: me.id, week: weekKey, team }));
+    else await sbq(sb.from('survivor_picks').delete().eq('player_id', me.id).eq('week', weekKey));
+    flash('svFlash', team ? `Listo: elegiste a ${team} para ${WEEK_LABEL[weekKey]}.` : 'Pick quitado.');
+  }catch(err){
+    flash('svFlash', dbError(err), true);
+  }
+  await loadMyPicks();
+  renderSurvivor();
+  renderHero();
+}
+function renderMyCard(){
+  const wrap = document.getElementById('myCard');
+  wrap.innerHTML = '';
+  wrap.appendChild(buildPlayerCard(me, 'me', false));
+}
+document.getElementById('btnMyCard').addEventListener('click', ()=>{
+  exportElementAsPng(document.getElementById('card-me'), 'tarjeta-' + safePlayerFileName(me.name) + '.png');
+});
+document.getElementById('svWeek').addEventListener('change', ()=>{ flash('svFlash', ''); renderSurvivor(); });
+
+/* ---------------- PICK'EM ---------------- */
+function renderPickem(){
+  const weekKey = document.getElementById('pkWeek').value;
+  const list = document.getElementById('pkList');
+  const weekGames = games.filter(g=>g.week===weekKey).sort((a,b)=> (a.kickoff||'').localeCompare(b.kickoff||'') || a.id - b.id);
+  const outcomes = pub ? pub.snapshot.pickem.outcomes : {};
+  const weekly = pub ? pub.snapshot.pickem.weekly : {};
+  const picked = weekGames.filter(g=> myPickem[g.id]).length;
+  const pts = weekly[weekKey] ? (weekly[weekKey][me.id] || 0) : null;
+  document.getElementById('pkPoints').innerHTML = `${picked}/${weekGames.length} elegidos`
+    + (pts !== null ? ` · <b>${pts}</b> pts` : '');
+  if(!weekGames.length){ list.innerHTML = '<p class="empty-note">Esta semana no tiene partidos cargados.</p>'; return; }
+  list.innerHTML = weekGames.map(g=>{
+    const locked = gameStarted(g);
+    const mine = myPickem[g.id] || null;
+    const answer = outcomes[g.id] || null; // solo si ya se publico esa semana
+    const btn = (choice, inner)=>{
+      const cls = ['pk-btn'];
+      if(mine === choice) cls.push('on');
+      if(answer && mine === choice) cls.push(answer === choice ? 'right' : 'wrong');
+      if(answer === choice) cls.push('answer');
+      return `<button class="${cls.join(' ')}" data-game="${g.id}" data-choice="${choice}" ${locked ? 'disabled' : ''}>${inner}</button>`;
+    };
+    const logo = (abbr)=> state.teamLogos[abbr] ? `<img src="${escapeHtml(state.teamLogos[abbr])}" alt="">` : '';
+    let result = locked ? 'Cerrado' : 'Abierto';
+    if(answer){
+      const ok = mine === answer;
+      result = `<b>${g.away} ${g.away_score} - ${g.home_score} ${g.home}</b><br><span class="${ok ? 'right' : 'wrong'}">${ok ? '✓ +1' : (mine ? '✗ 0' : 'Sin pick')}</span>`;
+    } else if(!mine && !locked) result = '<span class="empty-note">Sin elegir</span>';
+    return `<div class="pk-row${locked ? ' locked' : ''}">
+      <div class="pk-time"><b>${escapeHtml(g.away)} @ ${escapeHtml(g.home)}</b>${escapeHtml(formatKickoff(g.kickoff))}</div>
+      <div class="pk-choices">
+        ${btn('away', `${logo(g.away)}${escapeHtml(g.away)}`)}
+        ${btn('tie', `Cerrado <small>&lt;${state.tieMargin}</small>`)}
+        ${btn('home', `${logo(g.home)}${escapeHtml(g.home)}`)}
+      </div>
+      <div class="pk-result">${result}</div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.pk-btn:not(:disabled)').forEach(b=>{
+    b.addEventListener('click', ()=> savePickem(Number(b.dataset.game), b.dataset.choice));
+  });
+}
+async function savePickem(gameId, choice){
+  const clearing = myPickem[gameId] === choice; // tocar otra vez el mismo boton lo quita
+  flash('pkFlash', 'Guardando…');
+  try{
+    if(clearing) await sbq(sb.from('pickem_picks').delete().eq('player_id', me.id).eq('game_id', gameId));
+    else await sbq(sb.from('pickem_picks').upsert({ player_id: me.id, game_id: gameId, choice }));
+    if(clearing) delete myPickem[gameId]; else myPickem[gameId] = choice;
+    flash('pkFlash', 'Guardado.');
+  }catch(err){
+    flash('pkFlash', dbError(err), true);
+    await loadMyPicks();
+  }
+  renderPickem();
+}
+document.getElementById('pkWeek').addEventListener('change', ()=>{ flash('pkFlash', ''); renderPickem(); });
+
+/* ---------------- POSICIONES ---------------- */
+function renderStandings(){
+  const table = document.getElementById('standingsTable');
+  const sel = document.getElementById('stWeek');
+  if(!pub || !Object.keys(pub.snapshot.pickem.weekly).length){
+    table.innerHTML = '<tr><td class="empty-note">Todavía no hay posiciones publicadas.</td></tr>';
+    return;
+  }
+  const { weekly, elo } = pub.snapshot.pickem;
+  const res = pickemStandings(state.players, weekly, elo, sel.value);
+  const mv = (n)=> n > 0 ? `<span class="mv up">▲${n}</span>` : n < 0 ? `<span class="mv down">▼${-n}</span>` : '<span class="mv same">—</span>';
+  const signed = (n)=> (n > 0 ? '+' : '') + n;
+  table.innerHTML = `<thead><tr><th>#</th><th></th><th class="l">Jugador</th><th>${escapeHtml(WEEK_LABEL[res.weekKey] || '')}</th><th>Total</th><th>Elo</th><th>Cambio</th></tr></thead><tbody>`
+    + res.rows.map(r=>`<tr class="${me && r.player.id===me.id ? 'me' : ''}">
+        <td class="pos">${r.pos}</td><td>${mv(r.move)}</td>
+        <td class="l nm">${escapeHtml(r.player.name)}</td>
+        <td>${r.week}</td><td class="pts">${r.total}</td>
+        <td class="elo">${Math.round(r.elo)}</td><td class="elo">${signed(Math.round(r.eloChange))}</td>
+      </tr>`).join('') + '</tbody>';
+}
+document.getElementById('stWeek').addEventListener('change', renderStandings);
+
+/* ---------------- TABLA GENERAL ---------------- */
+function renderGeneralTable(){
+  const limit = pub ? WEEK_INDEX[pub.through_week] : -1;
+  const weeks = WEEKS.filter(w=> WEEK_INDEX[w.key] <= limit);
+  if(!weeks.length){ document.getElementById('mainTable').innerHTML = '<tbody><tr><td class="empty-note">Todavía no hay tabla publicada.</td></tr></tbody>'; return; }
+  renderMainTable(weeks, state.players);
+  const logo = document.getElementById('tableLogoImg');
+  if(state.leagueLogo){ logo.src = state.leagueLogo; logo.style.display = 'block'; } else logo.style.display = 'none';
+  const wm = state.tableWatermark || {};
+  const wmImg = document.getElementById('tableWatermarkImg');
+  if(wm.image){ wmImg.src = wm.image; wmImg.style.opacity = wm.opacity; wmImg.style.display = 'block'; } else wmImg.style.display = 'none';
+  const rImg = document.getElementById('survivorRibbonImg');
+  if(state.survivorRibbon){
+    document.getElementById('survivorRibbon').classList.add('has-image');
+    document.getElementById('survivorRibbonText').style.display = 'none';
+    rImg.src = state.survivorRibbon; rImg.style.display = 'block';
+  }
+}
+
+/* ---------------- TABS ---------------- */
+const TAB_RENDERERS = { survivor: renderSurvivor, pickem: renderPickem, posiciones: renderStandings, tabla: renderGeneralTable };
+function renderActive(){
+  if(!me) return;
+  const active = document.querySelector('.tab-btn.active');
+  TAB_RENDERERS[active ? active.dataset.tab : 'survivor']();
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    renderActive();
+  });
+});
+
+/* ---------------- INIT ---------------- */
+function setupSelects(){
+  const cur = currentWeekKey(games);
+  const wk = weeksWithGames();
+  fillWeekSelect('svWeek', wk, document.getElementById('svWeek').value || cur);
+  fillWeekSelect('pkWeek', wk, document.getElementById('pkWeek').value || cur);
+  const pubWeeks = pub ? WEEKS.filter(w=> pub.snapshot.pickem.weekly[w.key]) : [];
+  fillWeekSelect('stWeek', pubWeeks, pubWeeks.length ? pubWeeks[pubWeeks.length-1].key : '');
+}
+async function refreshPublication(){
+  await loadPortal();
+  setupSelects();
+  renderHero();
+  renderActive();
+}
+async function boot(session){
+  currentUser = session.user;
+  document.getElementById('sessionEmail').textContent = currentUser.email || '';
+  try{
+    await loadPortal();
+    wrapEl.hidden = false;
+    document.getElementById('noPlayerMsg').hidden = !!me;
+    document.getElementById('portalMain').hidden = !me;
+    setupSelects();
+    renderHero();
+    renderActive();
+    // Cuando el admin publica, las tablas se actualizan solas
+    if(pubChannel) sb.removeChannel(pubChannel);
+    pubChannel = sb.channel('portal-pub')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'publications' }, ()=> refreshPublication())
+      .subscribe();
+  }catch(err){
+    console.error(err);
+    wrapEl.hidden = false;
+    document.getElementById('noPlayerMsg').hidden = false;
+    document.getElementById('noPlayerMsg').textContent = 'No se pudieron cargar tus datos: ' + (err.message || err);
+    document.getElementById('portalMain').hidden = true;
+  }
+}
+mountAuthGate({
+  title: 'Mi Portal',
+  subtitle: 'Entra con el correo y la contraseña que te dio el admin.',
+  onReady: boot,
+  onSignedOut: ()=>{
+    wrapEl.hidden = true;
+    if(pubChannel){ sb.removeChannel(pubChannel); pubChannel = null; }
+    state = null; me = null;
+  }
+});
+</script>
+</body></html>

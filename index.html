@@ -50,6 +50,7 @@
   }
 
   .cards{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .card-wide{grid-column:1 / -1;}
   @media (max-width:640px){ .cards{grid-template-columns:1fr;} }
 
   .card{
@@ -92,6 +93,11 @@
     </div>
 
     <div class="cards">
+      <a class="card card-wide" href="portal.html">
+        <div class="icon">🏈</div>
+        <h2>Mi Portal</h2>
+        <p>Entra con tu cuenta para elegir tus picks del survivor y del pick'em, ver tus vidas, tu tarjeta y las posiciones.</p>
+      </a>
       <a class="card" href="fantasy_standings.html">
         <div class="icon">🏆</div>
         <h2>Fantasy Standings</h2>
@@ -99,8 +105,8 @@
       </a>
       <a class="card" href="survivor-league_new.html">
         <div class="icon">🔥</div>
-        <h2>Survivor League</h2>
-        <p>Gestiona picks, eliminaciones y el póster semanal del survivor.</p>
+        <h2>Survivor · Admin</h2>
+        <p>Solo administradores: resultados, picks en vivo, pósters y el botón de publicar.</p>
       </a>
     </div>
 
