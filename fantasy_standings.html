@@ -255,9 +255,11 @@
   #poster.theme-dark .nm{color:#f2f1ff;}
 
   .rd,.elo,.pts{text-align:center;font-weight:600;outline:none;font-variant-numeric:tabular-nums;}
-  #poster.layout-list .rd,#poster.layout-list .elo{font-size:15px;}
+  #poster.layout-list .rd{font-size:15px;}
+  #poster.layout-list .elo{font-size:12px;}
   #poster.layout-list .pts{font-weight:700;font-size:19px;}
-  #poster.layout-columns .rd,#poster.layout-columns .elo{font-size:9.5px;}
+  #poster.layout-columns .rd{font-size:9.5px;}
+  #poster.layout-columns .elo{font-size:8px;}
   #poster.layout-columns .pts{font-weight:700;font-size:11px;}
   #poster.theme-light .rd,#poster.theme-light .elo{color:#524e78;}
   #poster.theme-dark .rd,#poster.theme-dark .elo{color:rgba(233,233,237,0.78);}
@@ -329,9 +331,21 @@
     width:66%; max-height:66%; object-fit:contain;
     opacity:0.12; pointer-events:none; z-index:0;
   }
+
+  /* ---------- back to index ---------- */
+  .back-home-bar{max-width:1220px;margin:0 auto 16px;}
+  .back-home{
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.6px;text-transform:uppercase;
+    color:var(--chalk);background:rgba(255,255,255,0.06);border:1px solid rgba(150,165,255,0.25);
+    border-radius:999px;padding:7px 16px 7px 12px;transition:background .15s ease,border-color .15s ease;
+  }
+  .back-home:hover{background:rgba(255,255,255,0.12);border-color:var(--purple);}
 </style>
 </head>
 <body>
+
+<div class="back-home-bar"><a class="back-home" href="index.html">&larr; Inicio</a></div>
 
 <!-- Estado horneado dentro del propio archivo. Se llena al usar "Guardar copia HTML". -->
 <script type="application/json" id="embeddedStateData">{}</script>
