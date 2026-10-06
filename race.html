@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrera de Posiciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --field:#050814;
+    --panel:#0b1030;
+    --line: rgba(150,165,255,0.14);
+    --chalk:#f4f5fb;
+    --chalk-dim: rgba(244,245,251,0.62);
+    --blue:#2b3ef5;
+    --purple:#8b6cf5;
+    --gold:#f2d24b;
+    --red:#e0342a;
+    --green:#3aa856;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Oswald', Arial, sans-serif;
+    background:
+      radial-gradient(ellipse 900px 600px at 85% 0%, rgba(139,108,245,0.16) 0%, rgba(139,108,245,0) 60%),
+      radial-gradient(ellipse 800px 600px at 0% 100%, rgba(43,62,245,0.14) 0%, rgba(43,62,245,0) 60%),
+      linear-gradient(165deg, #0a0e26 0%, #05070f 60%, #000 100%);
+    color:var(--chalk);
+    min-height:100vh;
+    padding:24px;
+  }
+  .app{
+    max-width:1220px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width:900px){ .app{grid-template-columns:1fr;} body{padding:16px;} }
+
+  /* ---------- PANEL ---------- */
+  .panel{
+    background:
+      radial-gradient(ellipse 480px 320px at 100% 0%, rgba(139,108,245,0.35) 0%, rgba(139,108,245,0) 60%),
+      linear-gradient(165deg, #131a44 0%, #0b1030 55%, #070a22 100%);
+    border:1px solid rgba(150,165,255,0.16);
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 10px 26px rgba(6,8,26,0.35);
+    position:sticky;
+    top:24px;
+    max-height:calc(100vh - 48px);
+    overflow-y:auto;
+  }
+  @media (max-width:900px){ .panel{position:static;max-height:none;} }
+  .panel h1{font-size:19px;margin:0 0 4px;color:var(--chalk);}
+  .panel .sub{font-size:12.5px;color:var(--chalk-dim);margin:0 0 16px;line-height:1.4;}
+  .back{display:inline-block;font-size:12px;color:#b7c0ee;text-decoration:none;margin-bottom:12px;}
+  .back:hover{color:var(--chalk);}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:#b7c0ee;margin-bottom:5px;}
+  .field label .opt{text-transform:none;font-weight:400;color:#7c85b8;}
+  .field input[type=text], .field select{
+    width:100%;padding:9px 10px;border:1.5px solid rgba(150,165,255,0.22);border-radius:8px;
+    font-size:13px;font-family:inherit;background:rgba(255,255,255,0.05);color:var(--chalk);
+  }
+  .field input::placeholder{color:#6d76a8;}
+  .field select option{background:#131a44;color:var(--chalk);}
+  .field input:focus, .field select:focus{outline:none;border-color:var(--purple);}
+  .field .hint{font-size:11.5px;color:#7c85b8;margin-top:4px;line-height:1.35;}
+  .btn{width:100%;padding:11px;border:none;border-radius:8px;font-family:'Oswald',sans-serif;font-weight:600;font-size:13.5px;letter-spacing:0.4px;cursor:pointer;text-transform:uppercase;}
+  .btn:disabled{opacity:0.5;cursor:default;}
+  .btn-primary{background:linear-gradient(100deg, var(--blue) 0%, var(--purple) 100%);color:#fff;}
+  .btn-primary:hover{filter:brightness(1.1);}
+  .btn-download{background:var(--red);color:#fff;}
+  .btn-download:hover{background:#b71822;}
+  .btn-ghost{background:rgba(255,255,255,0.08);color:var(--chalk);border:1px solid rgba(150,165,255,0.2);}
+  .btn-ghost:hover{background:rgba(255,255,255,0.14);}
+  .row{display:flex;gap:8px;margin-bottom:10px;}
+  .row > *{flex:1;}
+  .seg{display:flex;background:rgba(255,255,255,0.05);border:1.5px solid rgba(150,165,255,0.22);border-radius:8px;padding:3px;gap:3px;}
+  .seg button{flex:1;padding:7px 6px;border:none;border-radius:6px;background:transparent;color:var(--chalk-dim);font-family:inherit;font-weight:600;font-size:12.5px;letter-spacing:0.4px;text-transform:uppercase;cursor:pointer;}
+  .seg button.active{background:linear-gradient(100deg, var(--blue) 0%, var(--purple) 100%);color:#fff;}
+  .status{font-size:12px;color:var(--chalk-dim);margin:6px 0 14px;min-height:16px;line-height:1.4;}
+  .status.err{color:#ff8a80;}
+  hr{border:none;border-top:1px solid var(--line);margin:16px 0;}
+
+  /* ---------- STAGE ---------- */
+  .stage{display:flex;flex-direction:column;gap:12px;align-items:center;}
+  .canvas-wrap{width:100%;display:flex;justify-content:center;}
+  canvas#race{
+    display:block;max-width:100%;height:auto;max-height:calc(100vh - 140px);
+    border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,0.45);cursor:pointer;
+  }
+  .transport{width:100%;max-width:760px;display:flex;align-items:center;gap:10px;}
+  .transport button{width:auto;padding:8px 14px;flex:none;}
+  .transport input[type=range]{flex:1;accent-color:var(--purple);}
+  .transport .wk{font-size:13px;color:var(--chalk-dim);min-width:58px;text-align:right;font-variant-numeric:tabular-nums;}
+  .tip{font-size:12px;color:#7c85b8;text-align:center;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel">
+    <a class="back" href="index.html">← Volver al inicio</a>
+    <h1>Carrera de Posiciones</h1>
+    <p class="sub">Animación semana a semana a partir de la hoja de puntos acumulados.</p>
+
+    <div class="field">
+      <label for="csvUrl">Link CSV · Puntos acumulados</label>
+      <input type="text" id="csvUrl" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+      <div class="hint">Primera columna = jugador, luego WK 1, WK 2… Funciona con el link “pubhtml” o “csv”.</div>
+    </div>
+    <div class="field">
+      <label for="standingsUrl">Link CSV · Standings <span class="opt">(opcional)</span></label>
+      <input type="text" id="standingsUrl" placeholder="Para desempatar con la columna Posicion">
+      <div class="hint">Si lo pones, los empates de la última semana jugada se ordenan con tu Posicion oficial.</div>
+    </div>
+    <button class="btn btn-primary" id="btnLoad">Cargar datos</button>
+    <div class="status" id="status"></div>
+
+    <div class="field">
+      <label for="leagueName">Nombre de la liga</label>
+      <input type="text" id="leagueName" value="RAMIREZ Y AMIGOS">
+    </div>
+    <div class="field">
+      <label>Modo</label>
+      <div class="seg" id="modeSeg">
+        <button data-mode="rank" class="active">Posiciones</button>
+        <button data-mode="score">Puntos</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Formato</label>
+      <div class="seg" id="formatSeg">
+        <button data-format="vertical" class="active">Vertical 4:5</button>
+        <button data-format="horizontal">Horizontal 16:9</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="speed">Velocidad</label>
+      <select id="speed">
+        <option value="0.5">Lenta</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.6">Rápida</option>
+        <option value="2.5">Muy rápida</option>
+      </select>
+    </div>
+
+    <hr>
+    <button class="btn btn-download" id="btnRecord" disabled>Descargar video</button>
+    <div class="status" id="recStatus"></div>
+    <button class="btn btn-ghost" id="btnPng" disabled>Descargar imagen (cuadro actual)</button>
+  </aside>
+
+  <main class="stage">
+    <div class="canvas-wrap"><canvas id="race" width="1080" height="1350"></canvas></div>
+    <div class="transport">
+      <button class="btn btn-ghost" id="btnPlay" disabled>▶ Play</button>
+      <button class="btn btn-ghost" id="btnReplay" disabled>↺ Replay</button>
+      <input type="range" id="scrub" min="0" max="0" step="0.01" value="0" disabled>
+      <span class="wk" id="wkLabel">—</span>
+    </div>
+    <div class="tip">Toca un nombre para resaltarlo (también sale resaltado en el video). Toca un espacio vacío para quitarlo.</div>
+  </main>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+const CFG_KEY = 'fantasy-race-config';
+const STANDINGS_CORE_KEY = 'fantasy-poster-core';
+const DEFAULT_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDmVx6q_EhmEGaX3VOleFCldYFyB8EXUDUPRS3bPPcxQ_WULn3yAoJwe6KnGkU8KugNVW8iCQLgAdu/pub?gid=2025594080&single=true&output=csv';
+
+const PALETTE = [
+  '#ff4d6d','#4dabf7','#ffd43b','#51cf66','#b197fc','#ff922b','#3bc9db','#f783ac','#a9e34b','#748ffc',
+  '#e599f7','#ffa94d','#63e6be','#ff8787','#91a7ff','#fcc419','#20c997','#da77f2','#c0eb75','#ffc9c9'
+];
+const FORMATS = { vertical:{w:1080,h:1350}, horizontal:{w:1920,h:1080} };
+
+let cfg = { csvUrl: DEFAULT_CSV, standingsUrl:'', leagueName:'RAMIREZ Y AMIGOS', mode:'rank', format:'vertical', speed:1 };
+let data = null;           // { weeks:[label], players:[{name,color,vals,ranks}], lastPlayed }
+let progress = 0, playing = false, lastTs = null, dirty = true;
+let highlighted = new Set();
+let labelHits = [];        // [{name,x,y,w,h}] desde el último cuadro, para clics
+let recording = null;
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+function loadCfg(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(CFG_KEY) || 'null');
+    if(saved) Object.assign(cfg, saved);
+    if(!cfg.standingsUrl){
+      const core = JSON.parse(localStorage.getItem(STANDINGS_CORE_KEY) || 'null');
+      if(core && core.csvUrl) cfg.standingsUrl = core.csvUrl;
+      if(core && core.leagueName && !saved) cfg.leagueName = core.leagueName;
+    }
+  }catch(e){}
+}
+function saveCfg(){
+  try{ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){}
+}
+
+/* ============================================================
+   CSV
+   ============================================================ */
+function normalizeSheetUrl(url){
+  url = (url || '').trim();
+  if(!url) return '';
+  if(/docs\.google\.com\/spreadsheets\/d\/e\//.test(url)){
+    url = url.replace('/pubhtml', '/pub');
+    if(!/[?&]output=csv/.test(url)) url += (url.includes('?') ? '&' : '?') + 'output=csv';
+  }
+  return url;
+}
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else field += c;
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c !== '\r'){ field += c; }
+    }
+  }
+  if(field !== '' || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+const nameKey = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toLowerCase();
+const parseNum = v => {
+  const s = (v ?? '').toString().trim().replace(',', '.');
+  if(s === '') return null;
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+};
+
+async function fetchCSV(url){
+  const res = await fetch(normalizeSheetUrl(url), { cache:'no-store' });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return parseCSV(await res.text());
+}
+
+function buildData(rows, posMap){
+  const header = rows[0] || [];
+  const weekCols = [];
+  for(let c=1;c<header.length;c++){
+    if(header[c].trim()) weekCols.push(c);
+  }
+  const players = [];
+  rows.slice(1).forEach(r => {
+    const name = (r[0] || '').trim();
+    if(!name) return;
+    players.push({ name, raw: weekCols.map(c => parseNum(r[c])) });
+  });
+  if(!players.length || !weekCols.length) throw new Error('No encontré jugadores o columnas de semanas.');
+
+  // Semanas con al menos un valor; las celdas vacías arrastran el valor previo.
+  let nWeeks = 0;
+  weekCols.forEach((_, w) => { if(players.some(p => p.raw[w] !== null)) nWeeks = w + 1; });
+  if(!nWeeks) throw new Error('Las columnas de semanas están vacías.');
+  players.forEach((p, i) => {
+    let prev = 0;
+    p.vals = p.raw.slice(0, nWeeks).map(v => (prev = (v === null ? prev : v)));
+    p.color = PALETTE[i % PALETTE.length];
+    p.pos = posMap ? posMap.get(nameKey(p.name)) ?? null : null;
+  });
+
+  // Última semana en la que cambió algún total (después de eso son líneas planas).
+  let lastPlayed = 0;
+  for(let w=1; w<nWeeks; w++){
+    if(players.some(p => p.vals[w] !== p.vals[w-1])) lastPlayed = w;
+  }
+
+  // Ranking estilo competencia (empates comparten lugar: 1,1,3…).
+  // Desde la última semana jugada, los empates se rompen con la Posicion oficial.
+  for(let w=0; w<nWeeks; w++){
+    players.forEach(p => {
+      let r = 1;
+      players.forEach(q => {
+        if(q === p) return;
+        if(q.vals[w] > p.vals[w]) r++;
+        else if(w >= lastPlayed && q.vals[w] === p.vals[w] && p.pos !== null && q.pos !== null && q.pos < p.pos) r++;
+      });
+      (p.ranks || (p.ranks = []))[w] = r;
+    });
+  }
+  return {
+    weeks: weekCols.slice(0, nWeeks).map(c => header[c].trim().toUpperCase()),
+    players,
+    lastPlayed,
+    maxScore: Math.max(...players.map(p => Math.max(...p.vals)))
+  };
+}
+
+function buildPosMap(rows){
+  if(!rows || rows.length < 2) return null;
+  const header = rows[0].map(h => nameKey(h));
+  let core = null;
+  try{ core = JSON.parse(localStorage.getItem(STANDINGS_CORE_KEY) || 'null'); }catch(e){}
+  const find = (preferred, patterns) => {
+    if(preferred){ const i = header.indexOf(nameKey(preferred)); if(i >= 0) return i; }
+    return header.findIndex(h => patterns.some(re => re.test(h)));
+  };
+  const nameCol = find(core && core.nameField, [/equipo/, /jugador/, /nombre/, /name/, /team/]);
+  const posCol = find(core && core.noField, [/posici/, /^pos/, /^no\.?$/, /^#$/, /rank/]);
+  if(nameCol < 0 || posCol < 0) return null;
+  const map = new Map();
+  rows.slice(1).forEach(r => {
+    const pos = parseNum(r[posCol]);
+    if(r[nameCol] && pos !== null) map.set(nameKey(r[nameCol]), pos);
+  });
+  return map.size ? map : null;
+}
+
+async function loadData(){
+  const status = el('status');
+  status.className = 'status';
+  status.textContent = 'Cargando…';
+  try{
+    const rows = await fetchCSV(cfg.csvUrl);
+    let posMap = null, note = '';
+    if(cfg.standingsUrl.trim()){
+      try{
+        posMap = buildPosMap(await fetchCSV(cfg.standingsUrl));
+        if(!posMap) note = ' · No encontré la columna Posicion en standings.';
+      }catch(e){ note = ' · No pude leer standings (' + e.message + ').'; }
+    }
+    data = buildData(rows, posMap);
+    if(posMap){
+      const missing = data.players.filter(p => p.pos === null).map(p => p.name);
+      note = missing.length ? ' · Sin Posicion: ' + missing.join(', ') : ' · Desempate con Posicion ✓';
+    }
+    status.textContent = data.players.length + ' jugadores · ' + data.weeks.length + ' semanas (última jugada: ' + data.weeks[data.lastPlayed] + ')' + note;
+    el('scrub').max = data.weeks.length - 1;
+    ['btnPlay','btnReplay','scrub','btnRecord','btnPng'].forEach(id => el(id).disabled = false);
+    highlighted = new Set([...highlighted].filter(n => data.players.some(p => p.name === n)));
+    progress = 0;
+    play();
+  }catch(e){
+    status.className = 'status err';
+    status.textContent = 'Error al cargar: ' + e.message;
+  }
+}
+
+/* ============================================================
+   DRAW
+   ============================================================ */
+const canvas = el('race');
+const ctx = canvas.getContext('2d');
+
+function layout(){
+  const W = canvas.width, H = canvas.height;
+  const vertical = H > W;
+  return {
+    W, H, vertical,
+    header: vertical ? 120 : 110,
+    plotL: vertical ? 92 : 110,
+    plotR: W - (vertical ? 250 : 300),
+    plotT: vertical ? 235 : 200,
+    plotB: H - (vertical ? 80 : 70),
+    labelFont: vertical ? 24 : 24,
+    weekFont: vertical ? 22 : 22
+  };
+}
+
+function rankAt(p, t){
+  const w = Math.floor(t), f = t - w;
+  if(w >= p.ranks.length - 1) return p.ranks[p.ranks.length - 1];
+  return p.ranks[w] + (p.ranks[w+1] - p.ranks[w]) * f;
+}
+function valAt(p, t){
+  const w = Math.floor(t), f = t - w;
+  if(w >= p.vals.length - 1) return p.vals[p.vals.length - 1];
+  return p.vals[w] + (p.vals[w+1] - p.vals[w]) * f;
+}
+function niceMax(v){
+  const step = v > 60 ? 20 : v > 30 ? 10 : 5;
+  return { max: Math.ceil(v / step) * step || step, step };
+}
+
+function slantedBar(x, y, w, h, colors, slantLeft){
+  const g = ctx.createLinearGradient(x, 0, x + w, 0);
+  colors.forEach((c, i) => g.addColorStop(i / (colors.length - 1), c));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  if(slantLeft){
+    ctx.moveTo(x + h * 0.7, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h);
+  } else {
+    ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w - h * 0.7, y + h); ctx.lineTo(x, y + h);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function draw(t){
+  const L = layout();
+  const { W, H } = L;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.textBaseline = 'middle';
+
+  // Fondo
+  let g = ctx.createLinearGradient(0, 0, W * 0.4, H);
+  g.addColorStop(0, '#0d1236'); g.addColorStop(0.6, '#070a1c'); g.addColorStop(1, '#020309');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(W * 0.9, 0, 0, W * 0.9, 0, W * 0.8);
+  g.addColorStop(0, 'rgba(139,108,245,0.28)'); g.addColorStop(1, 'rgba(139,108,245,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(0, H, 0, 0, H, W * 0.8);
+  g.addColorStop(0, 'rgba(43,62,245,0.22)'); g.addColorStop(1, 'rgba(43,62,245,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // Encabezado: liga (derecha) + título/semana (izquierda)
+  const league = (cfg.leagueName || '').toUpperCase();
+  ctx.font = 'italic 700 ' + (L.vertical ? 44 : 48) + 'px Oswald';
+  const lw = Math.min(W * 0.62, ctx.measureText(league).width + 110);
+  slantedBar(W - lw, 22, lw, L.header - 44, ['#e0342a', '#8b6cf5'], true);
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'right';
+  ctx.fillText(league, W - 34, L.header / 2 + 1, lw - 90);
+
+  const wkIdx = data ? Math.min(data.weeks.length - 1, Math.round(t)) : 0;
+  ctx.textAlign = 'left';
+  ctx.font = '600 ' + (L.vertical ? 22 : 24) + 'px Oswald';
+  ctx.fillStyle = 'rgba(244,245,251,0.62)';
+  ctx.fillText(cfg.mode === 'rank' ? 'CARRERA DE POSICIONES' : 'CARRERA DE PUNTOS', 34, L.header / 2 - 20);
+  ctx.font = (L.vertical ? 46 : 52) + 'px "Archivo Black"';
+  ctx.fillStyle = '#f2d24b';
+  ctx.fillText(data ? 'SEMANA ' + (data.weeks[wkIdx] || '').replace(/^WK\s*/, '') : '', 34, L.header / 2 + 20);
+
+  if(!data){
+    ctx.font = '500 30px Oswald'; ctx.fillStyle = 'rgba(244,245,251,0.6)'; ctx.textAlign = 'center';
+    ctx.fillText('Carga tu link CSV para empezar', W / 2, H / 2);
+    return;
+  }
+
+  const N = data.players.length, nW = data.weeks.length;
+  const xOf = w => nW > 1 ? L.plotL + w * (L.plotR - L.plotL) / (nW - 1) : (L.plotL + L.plotR) / 2;
+  const sMax = niceMax(data.maxScore);
+  const yOf = cfg.mode === 'rank'
+    ? r => L.plotT + (r - 1) * (L.plotB - L.plotT) / Math.max(1, N - 1)
+    : v => L.plotB - v * (L.plotB - L.plotT) / sMax.max;
+
+  // Etiquetas de semanas (diagonales, como en la tabla)
+  ctx.font = '700 ' + L.weekFont + 'px Oswald';
+  ctx.textAlign = 'left';
+  data.weeks.forEach((wk, w) => {
+    const x = xOf(w);
+    ctx.save();
+    ctx.translate(x - 6, L.plotT - 26);
+    ctx.rotate(-Math.PI / 5);
+    ctx.fillStyle = w <= t + 0.001 ? (w === wkIdx ? '#f2d24b' : '#f4f5fb') : 'rgba(244,245,251,0.28)';
+    ctx.fillText(wk, 0, 0);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(150,165,255,0.10)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, L.plotT - 10); ctx.lineTo(x, L.plotB); ctx.stroke();
+  });
+
+  // Líneas guía horizontales
+  const ticks = [];
+  if(cfg.mode === 'rank'){
+    ticks.push(1);
+    for(let r=5; r<=N; r+=5) ticks.push(r);
+    if(ticks[ticks.length - 1] !== N) ticks.push(N);
+  } else {
+    for(let v=0; v<=sMax.max; v+=sMax.step) ticks.push(v);
+  }
+  ctx.font = '700 ' + (L.vertical ? 24 : 24) + 'px Oswald';
+  ctx.textAlign = 'right';
+  ticks.forEach(v => {
+    const y = yOf(v);
+    ctx.strokeStyle = 'rgba(244,245,251,0.16)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(L.plotL - 10, y); ctx.lineTo(L.plotR + 6, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(244,245,251,0.7)';
+    ctx.fillText(String(v), L.plotL - 22, y);
+  });
+
+  // Líneas de jugadores (los de abajo primero para que el líder quede encima)
+  const hasHl = highlighted.size > 0;
+  const order = [...data.players].sort((a, b) => (highlighted.has(a.name) - highlighted.has(b.name)) || rankAt(b, t) - rankAt(a, t));
+  const tips = [];
+  order.forEach(p => {
+    const dim = hasHl && !highlighted.has(p.name);
+    const metric = w => cfg.mode === 'rank' ? p.ranks[w] : p.vals[w];
+    const pts = [];
+    for(let w=0; w<=Math.floor(t) && w<nW; w++) pts.push([xOf(w), yOf(metric(w))]);
+    const f = t - Math.floor(t);
+    if(f > 0 && Math.floor(t) < nW - 1){
+      pts.push([xOf(t), yOf(cfg.mode === 'rank' ? rankAt(p, t) : valAt(p, t))]);
+    }
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    if(pts.length > 1){
+      const path = () => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
+      if(!dim){
+        path(); ctx.strokeStyle = p.color; ctx.globalAlpha = 0.18; ctx.lineWidth = 14; ctx.stroke();
+      }
+      path(); ctx.strokeStyle = p.color; ctx.globalAlpha = dim ? 0.16 : 1;
+      ctx.lineWidth = highlighted.has(p.name) ? 7 : 4.5; ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    const [tx, ty] = pts[pts.length - 1];
+    tips.push({ p, x: tx, y: ty, dim });
+  });
+
+  // Puntos y etiquetas al final de cada línea, sin encimarse
+  const gap = L.labelFont + 3;
+  const lbls = [...tips].sort((a, b) => a.y - b.y || (a.p.pos ?? 0) - (b.p.pos ?? 0)).map(tp => ({ ...tp, ly: tp.y }));
+  for(let i=1; i<lbls.length; i++) lbls[i].ly = Math.max(lbls[i].ly, lbls[i-1].ly + gap);
+  const bottom = L.plotB + 30;
+  if(lbls.length && lbls[lbls.length - 1].ly > bottom){
+    lbls[lbls.length - 1].ly = bottom;
+    for(let i=lbls.length - 2; i>=0; i--) lbls[i].ly = Math.min(lbls[i].ly, lbls[i+1].ly - gap);
+  }
+  const wkRound = Math.min(nW - 1, Math.round(t));
+  labelHits = [];
+  ctx.textAlign = 'left';
+  const layer = l => l.dim ? 0 : highlighted.has(l.p.name) ? 2 : 1;
+  [...lbls].sort((a, b) => layer(a) - layer(b)).forEach(({ p, x, y, ly, dim }) => {
+    ctx.globalAlpha = dim ? 0.3 : 1;
+    ctx.beginPath(); ctx.arc(x, y, highlighted.has(p.name) ? 15 : 12, 0, Math.PI * 2);
+    ctx.fillStyle = p.color; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(5,8,20,0.85)'; ctx.stroke();
+
+    const val = cfg.mode === 'rank' ? p.ranks[wkRound] : Math.round(valAt(p, t));
+    const txt = p.name + '  ' + val;
+    ctx.font = (highlighted.has(p.name) ? '700 ' : '600 ') + L.labelFont + 'px Oswald';
+    const lx = x + 24;
+    if(Math.abs(ly - y) > 4){
+      ctx.strokeStyle = p.color; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x + 12, y); ctx.lineTo(lx - 4, ly); ctx.stroke();
+    }
+    ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(5,8,20,0.9)';
+    ctx.strokeText(txt, lx, ly);
+    ctx.fillStyle = p.color;
+    ctx.fillText(txt, lx, ly);
+    labelHits.push({ name: p.name, x: x - 16, y: ly - gap / 2, w: lx - x + 16 + ctx.measureText(txt).width, h: gap });
+    ctx.globalAlpha = 1;
+  });
+
+  // Barra inferior
+  slantedBar(L.W * 0.28, H - 26, L.W * 0.72, 26, ['#2b3ef5', '#8b6cf5'], true);
+}
+
+/* ============================================================
+   PLAYBACK
+   ============================================================ */
+const msPerWeek = () => 1000 / (parseFloat(cfg.speed) || 1);
+const END_HOLD_MS = 2500, START_HOLD_MS = 800;
+let holdUntil = 0;
+
+function play(){
+  if(!data) return;
+  if(progress >= data.weeks.length - 1) progress = 0;
+  playing = true; lastTs = null;
+  holdUntil = progress === 0 ? performance.now() + START_HOLD_MS : 0;
+  updateTransport();
+}
+function pause(){ playing = false; updateTransport(); dirty = true; }
+function updateTransport(){
+  el('btnPlay').textContent = playing ? '❚❚ Pausa' : '▶ Play';
+  el('scrub').value = progress;
+  el('wkLabel').textContent = data ? data.weeks[Math.min(data.weeks.length - 1, Math.round(progress))] : '—';
+}
+
+function frame(ts){
+  if(playing && data){
+    if(lastTs !== null && ts >= holdUntil){
+      progress += (ts - lastTs) / msPerWeek();
+      if(progress >= data.weeks.length - 1){
+        progress = data.weeks.length - 1;
+        playing = false;
+        if(recording) recording.stopAt = ts + END_HOLD_MS;
+      }
+    }
+    lastTs = ts;
+    updateTransport();
+    dirty = true;
+  }
+  if(recording){
+    dirty = true;
+    if(recording.stopAt && ts >= recording.stopAt){ recording.rec.stop(); recording.stopAt = null; }
+  }
+  if(dirty){ draw(progress); dirty = false; }
+  requestAnimationFrame(frame);
+}
+
+/* ============================================================
+   EXPORT
+   ============================================================ */
+function pickMime(){
+  const opts = ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+  return opts.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+}
+function downloadBlob(blob, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function fileStem(){
+  const wk = data ? data.weeks[data.lastPlayed].replace(/\s+/g, '').toLowerCase() : '';
+  return 'carrera-' + (cfg.mode === 'rank' ? 'posiciones' : 'puntos') + '-' + wk;
+}
+
+function startRecording(){
+  if(!data || recording) return;
+  const mime = pickMime();
+  if(!mime || !canvas.captureStream){
+    el('recStatus').className = 'status err';
+    el('recStatus').textContent = 'Este navegador no puede grabar video. Usa Chrome o Edge.';
+    return;
+  }
+  const chunks = [];
+  const rec = new MediaRecorder(canvas.captureStream(30), { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+  rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+  rec.onstop = () => {
+    const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+    downloadBlob(new Blob(chunks, { type: mime.split(';')[0] }), fileStem() + '.' + ext);
+    el('recStatus').className = 'status';
+    el('recStatus').textContent = ext === 'mp4'
+      ? 'Listo: video MP4 descargado.'
+      : 'Listo: video WEBM descargado (WhatsApp no lo acepta; usa Chrome o Edge para MP4).';
+    recording = null;
+    setControlsLocked(false);
+  };
+  recording = { rec, stopAt: null };
+  setControlsLocked(true);
+  el('recStatus').className = 'status';
+  el('recStatus').textContent = 'Grabando… deja esta pestaña abierta y visible hasta que termine.';
+  progress = 0;
+  rec.start(250);
+  play();
+}
+function setControlsLocked(locked){
+  ['btnRecord','btnPlay','btnReplay','scrub','btnLoad','btnPng'].forEach(id => el(id).disabled = locked);
+  document.querySelectorAll('.seg button').forEach(b => b.disabled = locked);
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+function applyFormat(){
+  const f = FORMATS[cfg.format] || FORMATS.vertical;
+  canvas.width = f.w; canvas.height = f.h;
+  dirty = true;
+}
+function setSeg(segId, attr, value){
+  document.querySelectorAll('#' + segId + ' button').forEach(b => b.classList.toggle('active', b.dataset[attr] === value));
+}
+
+el('btnLoad').addEventListener('click', () => {
+  cfg.csvUrl = el('csvUrl').value.trim();
+  cfg.standingsUrl = el('standingsUrl').value.trim();
+  saveCfg();
+  loadData();
+});
+el('leagueName').addEventListener('input', e => { cfg.leagueName = e.target.value; saveCfg(); dirty = true; });
+el('speed').addEventListener('change', e => { cfg.speed = parseFloat(e.target.value); saveCfg(); });
+document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => {
+  cfg.mode = b.dataset.mode; setSeg('modeSeg', 'mode', cfg.mode); saveCfg(); dirty = true;
+}));
+document.querySelectorAll('#formatSeg button').forEach(b => b.addEventListener('click', () => {
+  cfg.format = b.dataset.format; setSeg('formatSeg', 'format', cfg.format); saveCfg(); applyFormat();
+}));
+el('btnPlay').addEventListener('click', () => playing ? pause() : play());
+el('btnReplay').addEventListener('click', () => { progress = 0; play(); });
+el('scrub').addEventListener('input', e => { playing = false; progress = parseFloat(e.target.value); updateTransport(); dirty = true; });
+el('btnRecord').addEventListener('click', startRecording);
+el('btnPng').addEventListener('click', () => canvas.toBlob(b => downloadBlob(b, fileStem() + '.png'), 'image/png'));
+
+canvas.addEventListener('click', e => {
+  if(recording) return;
+  const r = canvas.getBoundingClientRect();
+  const x = (e.clientX - r.left) * canvas.width / r.width;
+  const y = (e.clientY - r.top) * canvas.height / r.height;
+  const hit = labelHits.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
+  if(hit){ highlighted.has(hit.name) ? highlighted.delete(hit.name) : highlighted.add(hit.name); }
+  else highlighted.clear();
+  dirty = true;
+});
+document.addEventListener('keydown', e => {
+  if(e.code === 'Space' && data && !recording && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){
+    e.preventDefault(); playing ? pause() : play();
+  }
+});
+
+(async function init(){
+  loadCfg();
+  el('csvUrl').value = cfg.csvUrl || '';
+  el('standingsUrl').value = cfg.standingsUrl || '';
+  el('leagueName').value = cfg.leagueName || '';
+  el('speed').value = String(cfg.speed);
+  setSeg('modeSeg', 'mode', cfg.mode);
+  setSeg('formatSeg', 'format', cfg.format);
+  applyFormat();
+  try{ await Promise.all([document.fonts.load('700 30px Oswald'), document.fonts.load('600 30px Oswald'), document.fonts.load('italic 700 40px Oswald'), document.fonts.load('40px "Archivo Black"')]); }catch(e){}
+  requestAnimationFrame(frame);
+  if(cfg.csvUrl) loadData();
+})();
+</script>
+</body>
+</html>
