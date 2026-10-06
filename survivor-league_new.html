@@ -986,7 +986,7 @@ document.getElementById('btnExportTable').addEventListener('click', async ()=>{
 
   const perImageRaw = parseInt(document.getElementById('playersPerImage').value, 10);
   const perImage = Number.isFinite(perImageRaw) && perImageRaw > 0 ? perImageRaw : 0;
-  const chunks = chunkPlayers(state.players, perImage);
+  const chunks = chunkPlayers(sortPlayersByLives(state.players), perImage);
   const scale = computeExportScale(rangeWeeks.length, perImage || state.players.length);
 
   const subtitle = document.getElementById('tableSubtitle');

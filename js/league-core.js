@@ -267,9 +267,17 @@ function teamLogoOrText(abbr){
   return state.showLogos && logo ? `<img src="${escapeHtml(logo)}" alt="${escapeHtml(abbr)}">` : escapeHtml(abbr);
 }
 
+/* Jugadores ordenados por vidas actuales (mas vidas arriba); en empate se respeta el orden original. */
+function sortPlayersByLives(players){
+  return players
+    .map((p, i)=> ({ p, i, lives: playerTimeline(p).lives }))
+    .sort((a,b)=> b.lives - a.lives || a.i - b.i)
+    .map(x=> x.p);
+}
+
 function renderMainTable(weeksToShow, playersToShow){
   const weeks = weeksToShow || WEEKS;
-  const players = playersToShow || state.players;
+  const players = sortPlayersByLives(playersToShow || state.players);
   const table = document.getElementById('mainTable');
   let html = '<thead><tr><th>Jugador</th><th>Vidas</th>';
   weeks.forEach(w=> html += `<th>${w.label}</th>`);
