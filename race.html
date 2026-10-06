@@ -143,11 +143,32 @@
     <div class="field">
       <label for="speed">Velocidad</label>
       <select id="speed">
+        <option value="0.3">Muy lenta</option>
         <option value="0.5">Lenta</option>
         <option value="1" selected>Normal</option>
         <option value="1.6">Rápida</option>
         <option value="2.5">Muy rápida</option>
       </select>
+    </div>
+    <div class="field">
+      <label for="hold">Tramo recto en cada semana</label>
+      <select id="hold">
+        <option value="0">Ninguno</option>
+        <option value="1">Corto (igual a un cambio)</option>
+        <option value="2" selected>Largo (como dos cambios)</option>
+        <option value="3">Muy largo (como tres cambios)</option>
+      </select>
+      <div class="hint">Cada semana la línea avanza recta en su posición y luego se mueve a la de la siguiente semana.</div>
+    </div>
+    <div class="field">
+      <label for="visible">Semanas en pantalla</label>
+      <select id="visible">
+        <option value="4">4 (columnas muy anchas)</option>
+        <option value="6" selected>6</option>
+        <option value="9">9</option>
+        <option value="all">Todas</option>
+      </select>
+      <div class="hint">Con menos semanas las columnas son más anchas y la vista se recorre conforme avanza.</div>
     </div>
 
     <hr>
@@ -180,7 +201,7 @@ const PALETTE = [
 ];
 const FORMATS = { vertical:{w:1080,h:1350}, horizontal:{w:1920,h:1080} };
 
-let cfg = { csvUrl: DEFAULT_CSV, standingsUrl:'', leagueName:'RAMIREZ Y AMIGOS', mode:'rank', format:'vertical', speed:1 };
+let cfg = { csvUrl: DEFAULT_CSV, standingsUrl:'', leagueName:'RAMIREZ Y AMIGOS', mode:'rank', format:'vertical', speed:1, hold:2, visible:'6' };
 let data = null;           // { weeks:[label], players:[{name,color,vals,ranks}], lastPlayed }
 let progress = 0, playing = false, lastTs = null, dirty = true;
 let highlighted = new Set();
@@ -341,7 +362,7 @@ async function loadData(){
       note = missing.length ? ' · Sin Posicion: ' + missing.join(', ') : ' · Desempate con Posicion ✓';
     }
     status.textContent = data.players.length + ' jugadores · ' + data.weeks.length + ' semanas (última jugada: ' + data.weeks[data.lastPlayed] + ')' + note;
-    el('scrub').max = data.weeks.length - 1;
+    el('scrub').max = timeline().U;
     ['btnPlay','btnReplay','scrub','btnRecord','btnPng'].forEach(id => el(id).disabled = false);
     highlighted = new Set([...highlighted].filter(n => data.players.some(p => p.name === n)));
     progress = 0;
@@ -402,8 +423,10 @@ function slantedBar(x, y, w, h, colors, slantLeft){
   ctx.fill();
 }
 
-function draw(t){
+function draw(u){
   const L = layout();
+  const st = data ? stateAt(u) : null;
+  const t = st ? st.t : 0;
   const { W, H } = L;
   ctx.setTransform(1,0,0,1,0,0);
   ctx.textBaseline = 'middle';
@@ -443,7 +466,17 @@ function draw(t){
   }
 
   const N = data.players.length, nW = data.weeks.length;
-  const xOf = w => nW > 1 ? L.plotL + w * (L.plotR - L.plotL) / (nW - 1) : (L.plotL + L.plotR) / 2;
+  // Eje X: cada semana mide S px (tramo recto fF·S + diagonal). Si no caben todas,
+  // la "cámara" se recorre para que la punta de las líneas quede en el borde derecho.
+  const tl = timeline();
+  const plotW = L.plotR - L.plotL;
+  const K = cfg.visible === 'all' ? nW : Math.min(nW, parseInt(cfg.visible, 10) || nW);
+  const S = plotW / Math.max(0.5, (K - 1) + tl.fF);
+  const contentW = ((nW - 1) + tl.fF) * S;
+  const xc = (w, f) => (w + f) * S;
+  const camX = Math.max(0, Math.min(xc(st.w, st.xf) - plotW, contentW - plotW));
+  const X = v => L.plotL + v - camX;
+  const xOfWeek = w => X(xc(w, tl.fF / 2));
   const sMax = niceMax(data.maxScore);
   const yOf = cfg.mode === 'rank'
     ? r => L.plotT + (r - 1) * (L.plotB - L.plotT) / Math.max(1, N - 1)
@@ -453,11 +486,12 @@ function draw(t){
   ctx.font = '700 ' + L.weekFont + 'px Oswald';
   ctx.textAlign = 'left';
   data.weeks.forEach((wk, w) => {
-    const x = xOf(w);
+    const x = xOfWeek(w);
+    if(x < L.plotL - 20 || x > L.plotR + 40) return;
     ctx.save();
     ctx.translate(x - 6, L.plotT - 26);
     ctx.rotate(-Math.PI / 5);
-    ctx.fillStyle = w <= t + 0.001 ? (w === wkIdx ? '#f2d24b' : '#f4f5fb') : 'rgba(244,245,251,0.28)';
+    ctx.fillStyle = w <= st.w ? (w === wkIdx ? '#f2d24b' : '#f4f5fb') : 'rgba(244,245,251,0.28)';
     ctx.fillText(wk, 0, 0);
     ctx.restore();
     ctx.strokeStyle = 'rgba(150,165,255,0.10)';
@@ -489,14 +523,26 @@ function draw(t){
   const hasHl = highlighted.size > 0;
   const order = [...data.players].sort((a, b) => (highlighted.has(a.name) - highlighted.has(b.name)) || rankAt(b, t) - rankAt(a, t));
   const tips = [];
+  ctx.save();
+  ctx.beginPath(); ctx.rect(L.plotL - 12, 0, plotW + 40, H); ctx.clip();
   order.forEach(p => {
     const dim = hasHl && !highlighted.has(p.name);
     const metric = w => cfg.mode === 'rank' ? p.ranks[w] : p.vals[w];
+    // Cada semana: tramo recto y luego una diagonal en curva suave hacia la siguiente.
     const pts = [];
-    for(let w=0; w<=Math.floor(t) && w<nW; w++) pts.push([xOf(w), yOf(metric(w))]);
-    const f = t - Math.floor(t);
-    if(f > 0 && Math.floor(t) < nW - 1){
-      pts.push([xOf(t), yOf(cfg.mode === 'rank' ? rankAt(p, t) : valAt(p, t))]);
+    for(let w=0; w<=st.w; w++){
+      const y0 = yOf(metric(w));
+      pts.push([X(xc(w, 0)), y0]);
+      const flatEnd = w < st.w ? tl.fF : Math.min(st.xf, tl.fF);
+      if(flatEnd > 0) pts.push([X(xc(w, flatEnd)), y0]);
+      if(w >= nW - 1) continue;
+      const qEnd = w < st.w ? 1 : Math.max(0, (st.xf - tl.fF) / (1 - tl.fF));
+      if(qEnd <= 0) continue;
+      const y1 = yOf(metric(w + 1)), steps = Math.max(2, Math.ceil(20 * qEnd));
+      for(let k=1; k<=steps; k++){
+        const q = qEnd * k / steps;
+        pts.push([X(xc(w, tl.fF + q * (1 - tl.fF))), y0 + (y1 - y0) * smooth(q)]);
+      }
     }
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     if(pts.length > 1){
@@ -511,6 +557,7 @@ function draw(t){
     const [tx, ty] = pts[pts.length - 1];
     tips.push({ p, x: tx, y: ty, dim });
   });
+  ctx.restore();
 
   // Puntos y etiquetas al final de cada línea, sin encimarse
   const gap = L.labelFont + 3;
@@ -554,13 +601,42 @@ function draw(t){
 /* ============================================================
    PLAYBACK
    ============================================================ */
-const msPerWeek = () => 1000 / (parseFloat(cfg.speed) || 1);
+// progress avanza en "unidades de eje X" a velocidad constante. Cada semana ocupa
+// h unidades en línea recta + 1 unidad de rampa hacia la siguiente semana.
+const msPerUnit = () => 1000 / (parseFloat(cfg.speed) || 1);
 const END_HOLD_MS = 2500, START_HOLD_MS = 800;
 let holdUntil = 0;
 
+const FLAT_FRAC = 0.4;   // fracción del ancho de cada semana que se dibuja recta (el resto es la diagonal)
+const smooth = q => q * q * (3 - 2 * q);
+
+function timeline(){
+  const h = parseFloat(cfg.hold) || 0, c = h + 1;
+  const nW = data ? data.weeks.length : 1;
+  return { h, c, nW, fF: h > 0 ? FLAT_FRAC : 0, U: (nW - 1) * c + h };
+}
+// Para el instante u: semana w, fracción del ancho de esa semana recorrida (xf) y la
+// "semana continua" t con la que se interpolan posiciones y puntos.
+// El avance horizontal es más lento en el tramo recto y acelera/desacelera suave en la diagonal
+// (Hermite con la misma velocidad en ambos extremos, así no hay tirones al cambiar de tramo).
+function stateAt(u){
+  const { h, c, nW, fF } = timeline();
+  const w = Math.min(nW - 1, Math.floor(u / c));
+  const r = Math.max(0, u - w * c);
+  if(w >= nW - 1 || r < h){
+    return { w, xf: h > 0 ? fF * Math.min(r, h) / h : 0, t: w };
+  }
+  const s = Math.min(1, r - h), m = h > 0 ? fF / h : 1;
+  const s2 = s * s, s3 = s2 * s;
+  const xf = (2*s3 - 3*s2 + 1) * fF + (s3 - 2*s2 + s) * m + (-2*s3 + 3*s2) + (s3 - s2) * m;
+  const q = Math.min(1, Math.max(0, (xf - fF) / (1 - fF)));
+  return { w, xf, t: w + smooth(q) };
+}
+const weekAt = u => stateAt(u).t;
+
 function play(){
   if(!data) return;
-  if(progress >= data.weeks.length - 1) progress = 0;
+  if(progress >= timeline().U) progress = 0;
   playing = true; lastTs = null;
   holdUntil = progress === 0 ? performance.now() + START_HOLD_MS : 0;
   updateTransport();
@@ -569,15 +645,16 @@ function pause(){ playing = false; updateTransport(); dirty = true; }
 function updateTransport(){
   el('btnPlay').textContent = playing ? '❚❚ Pausa' : '▶ Play';
   el('scrub').value = progress;
-  el('wkLabel').textContent = data ? data.weeks[Math.min(data.weeks.length - 1, Math.round(progress))] : '—';
+  el('wkLabel').textContent = data ? data.weeks[Math.round(weekAt(progress))] : '—';
 }
 
 function frame(ts){
   if(playing && data){
     if(lastTs !== null && ts >= holdUntil){
-      progress += (ts - lastTs) / msPerWeek();
-      if(progress >= data.weeks.length - 1){
-        progress = data.weeks.length - 1;
+      progress += (ts - lastTs) / msPerUnit();
+      const U = timeline().U;
+      if(progress >= U){
+        progress = U;
         playing = false;
         if(recording) recording.stopAt = ts + END_HOLD_MS;
       }
@@ -667,6 +744,14 @@ el('btnLoad').addEventListener('click', () => {
 });
 el('leagueName').addEventListener('input', e => { cfg.leagueName = e.target.value; saveCfg(); dirty = true; });
 el('speed').addEventListener('change', e => { cfg.speed = parseFloat(e.target.value); saveCfg(); });
+el('visible').addEventListener('change', e => { cfg.visible = e.target.value; saveCfg(); dirty = true; });
+el('hold').addEventListener('change', e => {
+  const oldU = timeline().U;
+  cfg.hold = parseFloat(e.target.value);
+  if(oldU > 0) progress *= timeline().U / oldU;
+  el('scrub').max = timeline().U;
+  updateTransport(); saveCfg(); dirty = true;
+});
 document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => {
   cfg.mode = b.dataset.mode; setSeg('modeSeg', 'mode', cfg.mode); saveCfg(); dirty = true;
 }));
@@ -701,6 +786,8 @@ document.addEventListener('keydown', e => {
   el('standingsUrl').value = cfg.standingsUrl || '';
   el('leagueName').value = cfg.leagueName || '';
   el('speed').value = String(cfg.speed);
+  el('hold').value = String(cfg.hold);
+  el('visible').value = String(cfg.visible);
   setSeg('modeSeg', 'mode', cfg.mode);
   setSeg('formatSeg', 'format', cfg.format);
   applyFormat();
