@@ -506,6 +506,12 @@
           <label class="empty-note" title="Si tienes muchos jugadores, divide la tabla en varias imagenes para que no salga apretada">Jugadores por imagen:</label>
           <input type="number" id="playersPerImage" min="1" step="1" placeholder="Todos" style="width:70px;">
         </div>
+        <div class="group">
+          <label class="switch-row" title="Los jugadores sin vidas no salen en la imagen descargada">
+            <input type="checkbox" id="hideEliminatedExport">
+            <span>Ocultar eliminados en la imagen</span>
+          </label>
+        </div>
       </div>
       <div id="tableExportArea">
         <div class="sl-band">
@@ -694,7 +700,8 @@
         <span class="empty-note">Tarjeta individual de cada jugador. Puedes descargar cada una por separado.</span>
         <button class="btn" id="btnExportAllCards">Descargar todas (PNG)</button>
         <button class="btn ghost small" id="btnExportAllCardsSeparate">Descargar cada una por separado (PNG)</button>
-        <button class="btn ghost small" id="btnExportAliveCards">Descargar solo vivos (PNG)</button>
+        <button class="btn ghost small" id="btnExportAliveCardsTogether">Descargar solo vivos juntas (PNG)</button>
+        <button class="btn ghost small" id="btnExportAliveCards">Descargar solo vivos por separado (PNG)</button>
       </div>
       <div class="cards-grid" id="cardsGrid"></div>
     </div>
@@ -1112,9 +1119,17 @@ function teamLogoOrText(abbr){
 }
 
 /* ---------------- RENDER: MAIN TABLE ---------------- */
+/* Jugadores ordenados por vidas actuales (mas vidas arriba); en empate se respeta el orden original. */
+function sortPlayersByLives(players){
+  return players
+    .map((p, i)=> ({ p, i, lives: playerTimeline(p).lives }))
+    .sort((a,b)=> b.lives - a.lives || a.i - b.i)
+    .map(x=> x.p);
+}
+
 function renderMainTable(weeksToShow, playersToShow){
   const weeks = weeksToShow || WEEKS;
-  const players = playersToShow || state.players;
+  const players = sortPlayersByLives(playersToShow || state.players);
   const table = document.getElementById('mainTable');
   let html = '<thead><tr><th>Jugador</th><th>Vidas</th>';
   weeks.forEach(w=> html += `<th>${w.label}</th>`);
@@ -1644,8 +1659,11 @@ document.getElementById('btnExportTable').addEventListener('click', async ()=>{
 
   const perImageRaw = parseInt(document.getElementById('playersPerImage').value, 10);
   const perImage = Number.isFinite(perImageRaw) && perImageRaw > 0 ? perImageRaw : 0;
-  const chunks = chunkPlayers(state.players, perImage);
-  const scale = computeExportScale(rangeWeeks.length, perImage || state.players.length);
+  const hideEliminated = document.getElementById('hideEliminatedExport').checked;
+  const exportPlayers = hideEliminated ? state.players.filter(p=> playerTimeline(p).lives > 0) : state.players;
+  if(!exportPlayers.length){ alert('No hay jugadores vivos para exportar.'); return; }
+  const chunks = chunkPlayers(sortPlayersByLives(exportPlayers), perImage);
+  const scale = computeExportScale(rangeWeeks.length, Math.min(perImage || exportPlayers.length, exportPlayers.length));
 
   const subtitle = document.getElementById('tableSubtitle');
   const prevSubtitle = subtitle.textContent;
@@ -1685,6 +1703,25 @@ document.getElementById('btnExportTable').addEventListener('click', async ()=>{
 });
 document.getElementById('btnExportAllCards').addEventListener('click', ()=>{
   exportElementAsPng(document.getElementById('cardsGrid'), 'survivor-league-tarjetas.png');
+});
+/* Una sola imagen con las tarjetas de los vivos: las de eliminados se ocultan solo durante la captura. */
+document.getElementById('btnExportAliveCardsTogether').addEventListener('click', async (e)=>{
+  const btn = e.currentTarget;
+  const dead = state.players
+    .map((p, idx)=> ({ el: document.getElementById('card-'+idx), alive: playerTimeline(p).lives > 0 }))
+    .filter(t=> t.el && !t.alive);
+  if(dead.length === state.players.length){ alert('No hay jugadores vivos.'); return; }
+  const prevLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generando…';
+  dead.forEach(t=> t.el.style.display = 'none');
+  try{
+    await exportElementAsPng(document.getElementById('cardsGrid'), 'survivor-league-tarjetas-vivos.png');
+  } finally {
+    dead.forEach(t=> t.el.style.display = '');
+    btn.textContent = prevLabel;
+    btn.disabled = false;
+  }
 });
 async function exportCardsIndividually(onlyAlive, btn){
   const targets = state.players
