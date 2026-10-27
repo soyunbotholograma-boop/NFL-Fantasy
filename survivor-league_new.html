@@ -511,6 +511,10 @@
             <input type="checkbox" id="hideEliminatedExport">
             <span>Ocultar eliminados en la imagen</span>
           </label>
+          <label class="switch-row" title="Con eliminados ocultos, deja en la imagen a quienes perdieron su ultima vida en la ultima semana con resultados del rango">
+            <input type="checkbox" id="keepJustEliminatedExport" disabled>
+            <span>Incluir a los eliminados de esta semana</span>
+          </label>
         </div>
       </div>
       <div id="tableExportArea">
@@ -1003,6 +1007,12 @@ function playerTimeline(player){
   return { lives: Math.max(0, lives), missed };
 }
 function currentLives(player){ return playerTimeline(player).lives; }
+/* Vidas contando solo las primeras `weekCount` semanas (misma regla que playerTimeline). */
+function livesAfterWeeks(player, weekCount){
+  const allResults = state.results;
+  state.results = Object.fromEntries(WEEKS.slice(0, weekCount).filter(w=>allResults[w.key]).map(w=>[w.key, allResults[w.key]]));
+  try{ return playerTimeline(player).lives; } finally { state.results = allResults; }
+}
 function isOut(player){ return currentLives(player) <= 0; }
 
 /* ---------------- CALENDARIO: rival de cada equipo por semana ---------------- */
@@ -1660,7 +1670,16 @@ document.getElementById('btnExportTable').addEventListener('click', async ()=>{
   const perImageRaw = parseInt(document.getElementById('playersPerImage').value, 10);
   const perImage = Number.isFinite(perImageRaw) && perImageRaw > 0 ? perImageRaw : 0;
   const hideEliminated = document.getElementById('hideEliminatedExport').checked;
-  const exportPlayers = hideEliminated ? state.players.filter(p=> playerTimeline(p).lives > 0) : state.players;
+  const keepJustEliminated = hideEliminated && document.getElementById('keepJustEliminatedExport').checked;
+  /* "Esta semana" = la ultima semana del rango que ya tiene resultados. */
+  const lastResultWeek = [...rangeWeeks].reverse().find(w=> state.results[w.key]);
+  const lastIdx = lastResultWeek ? WEEKS.indexOf(lastResultWeek) : -1;
+  const eliminatedThisWeek = p=> lastIdx >= 0
+    && livesAfterWeeks(p, lastIdx) > 0
+    && livesAfterWeeks(p, lastIdx + 1) <= 0;
+  const exportPlayers = hideEliminated
+    ? state.players.filter(p=> playerTimeline(p).lives > 0 || (keepJustEliminated && eliminatedThisWeek(p)))
+    : state.players;
   if(!exportPlayers.length){ alert('No hay jugadores vivos para exportar.'); return; }
   const chunks = chunkPlayers(sortPlayersByLives(exportPlayers), perImage);
   const scale = computeExportScale(rangeWeeks.length, Math.min(perImage || exportPlayers.length, exportPlayers.length));
@@ -1700,6 +1719,11 @@ document.getElementById('btnExportTable').addEventListener('click', async ()=>{
     subtitle.textContent = prevSubtitle;
     btn.textContent = prevBtnText;
   }
+});
+document.getElementById('hideEliminatedExport').addEventListener('change', e=>{
+  const keep = document.getElementById('keepJustEliminatedExport');
+  keep.disabled = !e.target.checked;
+  if(!e.target.checked) keep.checked = false;
 });
 document.getElementById('btnExportAllCards').addEventListener('click', ()=>{
   exportElementAsPng(document.getElementById('cardsGrid'), 'survivor-league-tarjetas.png');
