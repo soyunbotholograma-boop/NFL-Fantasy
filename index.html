@@ -3,116 +3,487 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ramirez y Amigos — Herramientas</title>
+<title>Ramirez y Amigos — Fantasy Football</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wdth,wght@100..125,300..900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --field:#050814;
-    --panel:#0b1030;
-    --blue:#2b3ef5;
-    --purple:#8b6cf5;
-    --chalk:#f4f5fb;
-    --chalk-dim: rgba(244,245,251,0.62);
+    --bg:#0b0d0f;
+    --surface:#15181b;
+    --surface-2:#1d2125;
+    --surface-3:#272c31;
+    --line:rgba(255,255,255,0.07);
+    --text:#eef0f1;
+    --dim:#9aa1a8;
+    --faint:#646c74;
+    --lime:#c8f31d;
+    --lime-ink:#101400;
+    --strip:#d9dcdf;
+    --gold:#f4c724;
+    --stripes:repeating-linear-gradient(135deg, rgba(255,255,255,0.022) 0 2px, transparent 2px 10px);
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0;}
   body{
-    font-family:'Oswald', Arial, sans-serif;
-    min-height:100vh;
-    color:var(--chalk);
-    background:
-      radial-gradient(ellipse 900px 600px at 85% 0%, rgba(139,108,245,0.18) 0%, rgba(139,108,245,0) 60%),
-      radial-gradient(ellipse 800px 600px at 0% 100%, rgba(43,62,245,0.16) 0%, rgba(43,62,245,0) 60%),
-      linear-gradient(165deg, #0a0e26 0%, #05070f 60%, #000 100%);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:24px;
+    min-height:100vh; background:var(--bg); color:var(--text);
+    font-family:'Saira', system-ui, sans-serif; font-size:14px;
+    -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:820px; width:100%; text-align:center;}
-
-  .league-tag{
-    display:inline-block;
-    font-weight:700; font-style:italic; text-transform:uppercase;
-    letter-spacing:1px; font-size:13px; color:var(--chalk);
-    background:linear-gradient(100deg, var(--blue) 0%, #1626a8 100%);
-    padding:8px 26px 8px 16px; margin-bottom:22px;
-    clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%);
+  /* Resplandor lima arriba y filo lima a la izquierda, como en la referencia */
+  body::before{
+    content:""; position:fixed; inset:0 0 auto 0; height:340px; pointer-events:none; z-index:0;
+    background:radial-gradient(ellipse 70% 100% at 50% 0%, rgba(200,243,29,0.20) 0%, rgba(200,243,29,0) 70%);
+  }
+  body::after{
+    content:""; position:fixed; left:0; top:0; bottom:0; width:5px; pointer-events:none; z-index:0;
+    background:linear-gradient(180deg, var(--lime) 0%, rgba(200,243,29,0.25) 60%, rgba(200,243,29,0) 100%);
+  }
+  a{color:inherit;}
+  .wide{font-stretch:125%; font-weight:800; text-transform:uppercase; letter-spacing:.01em;}
+  .mk{display:inline-flex; align-items:center; gap:7px;}
+  .mk::before{
+    content:""; width:11px; height:8px; flex:0 0 auto; background:var(--lime);
+    clip-path:polygon(0 0, 62% 0, 100% 50%, 62% 100%, 0 100%);
   }
 
-  .wordmark{font-family:'Archivo Black', 'Oswald', sans-serif; font-style:italic; line-height:0.95; margin-bottom:44px;}
-  .wordmark .line1{font-size:46px; color:var(--chalk); letter-spacing:0.5px;}
-  .wordmark .line2{
-    font-size:46px; letter-spacing:0.5px;
-    background: linear-gradient(100deg, var(--purple) 10%, var(--blue) 100%);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
+  .shell{position:relative; z-index:1; max-width:1240px; margin:0 auto; padding:28px clamp(16px,3vw,32px) 48px;}
 
-  .cards{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
-  .card-wide{grid-column:1 / -1;}
-  @media (max-width:640px){ .cards{grid-template-columns:1fr;} }
+  /* ───────── Barra superior ───────── */
+  .topbar{display:flex; align-items:stretch; background:var(--surface); border:1px solid var(--line); min-height:58px;}
+  .brand{
+    display:flex; align-items:center; gap:12px; padding:0 22px 0 16px;
+    background:var(--lime); color:var(--lime-ink); text-decoration:none;
+  }
+  .brand__mark{
+    width:34px; height:30px; display:grid; place-items:center;
+    background:var(--lime-ink); color:var(--lime); font-stretch:125%; font-weight:900; font-size:14px;
+    clip-path:polygon(0 0,100% 0,100% 70%,78% 100%,0 100%);
+  }
+  .brand__name{line-height:1;}
+  .brand__name b{display:block; font-stretch:125%; font-weight:900; font-size:16px; letter-spacing:.01em;}
+  .brand__name span{font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;}
+  .role{
+    display:flex; flex-direction:column; justify-content:center; gap:1px; padding:0 18px;
+    background:var(--surface-3); min-width:170px;
+  }
+  .role small{font-size:11px; color:var(--dim);}
+  .role b{font-stretch:125%; font-weight:800; font-size:13px; text-transform:uppercase;}
+  .nav{display:flex; align-items:stretch; margin:0 auto; padding:0 12px;}
+  .nav a{
+    position:relative; display:flex; align-items:center; gap:8px; padding:0 16px;
+    text-decoration:none; font-stretch:115%; font-weight:700; font-size:12px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--dim); transition:color .2s;
+  }
+  .nav a svg{width:15px; height:15px;}
+  .nav a::after{
+    content:""; position:absolute; left:12px; right:12px; top:0; height:3px; background:var(--lime);
+    transform:scaleX(0); transition:transform .3s cubic-bezier(.7,0,.2,1);
+  }
+  .nav a:hover, .nav a.is-current{color:var(--text);}
+  .nav a:hover::after, .nav a.is-current::after{transform:scaleX(1);}
+  .season-pill{
+    align-self:center; margin-right:14px; display:inline-flex; align-items:center; gap:8px;
+    padding:7px 14px; border-radius:99px; background:var(--lime); color:var(--lime-ink);
+    font-stretch:115%; font-weight:800; font-size:11px; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap;
+  }
+  .season-pill::before{content:""; width:7px; height:7px; border-radius:50%; background:var(--lime-ink);}
 
-  .card{
-    display:block; text-decoration:none;
-    background:rgba(255,255,255,0.04);
-    border:1.5px solid rgba(150,165,255,0.2);
-    border-radius:14px;
-    padding:28px 22px;
-    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+  .subnav{
+    display:flex; justify-content:center; gap:28px; padding:9px 16px;
+    background:var(--strip); color:#22262a; font-size:12px; font-weight:500;
   }
-  .card:hover{ transform:translateY(-3px); border-color:var(--purple); background:rgba(255,255,255,0.07); }
-  .card .icon{
-    width:52px; height:52px; margin:0 auto 16px;
-    border-radius:12px;
-    display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(100deg, var(--blue) 0%, var(--purple) 100%);
-    font-size:24px;
-  }
-  .card h2{
-    font-family:'Archivo Black', sans-serif; font-style:italic;
-    font-size:20px; margin:0 0 8px; letter-spacing:0.3px; color:var(--chalk);
-    text-transform:uppercase;
-  }
-  .card p{font-size:13px; color:var(--chalk-dim); margin:0; line-height:1.5;}
+  .subnav a{text-decoration:none;}
+  .subnav a:hover{text-decoration:underline; text-underline-offset:3px;}
 
-  .missing-note{
-    margin-top:36px; font-size:12px; color:var(--chalk-dim);
-    background:rgba(255,255,255,0.04); border:1px solid rgba(150,165,255,0.16);
-    border-radius:10px; padding:12px 16px; text-align:left; line-height:1.6;
+  /* ───────── Panel principal ───────── */
+  .board{
+    background:var(--surface) var(--stripes); border:1px solid var(--line); border-top:0;
+    padding:clamp(20px,3vw,34px);
   }
-  .missing-note code{background:rgba(0,0,0,0.3); padding:1px 6px; border-radius:4px;}
+  .overview{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,.9fr); gap:28px; align-items:start;}
+  .greet{font-size:22px; font-weight:600; margin:0 0 16px; font-stretch:105%;}
+  .tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
+  .tile{
+    position:relative; overflow:hidden; background:var(--surface-2); padding:44px 12px 12px; min-height:118px;
+  }
+  .tile__icon{position:absolute; top:10px; right:10px; width:40px; height:40px; color:rgba(255,255,255,0.08);}
+  .tile__num{font-stretch:110%; font-weight:700; font-size:30px; line-height:1; font-variant-numeric:tabular-nums;}
+  .tile__lbl{font-size:12px; color:var(--dim); margin-top:6px;}
+  .wide-btn{margin-top:6px; width:100%;}
+  .meta{margin-top:12px; font-size:11px; color:var(--faint);}
+
+  .block-head{font-size:13px; font-weight:600; margin-bottom:6px;}
+  .block-sub{font-size:12px; color:var(--faint); line-height:1.4; margin-bottom:14px;}
+  .level{display:flex; align-items:center; gap:10px; margin:2px 0 4px;}
+  .level__badge{width:22px; height:24px; background:var(--lime); clip-path:polygon(50% 0,100% 22%,100% 74%,50% 100%,0 74%,0 22%);}
+  .level__name{font-size:30px; line-height:1;}
+  .level__sub{font-size:12px; color:var(--dim); margin-bottom:12px;}
+  .segs{display:grid; grid-template-columns:repeat(18,1fr); gap:3px; margin-bottom:8px;}
+  .segs i{height:12px; background:var(--surface-3); transform-origin:left;}
+  .segs i.on{background:var(--lime);}
+  .segs i.now{background:var(--lime); box-shadow:0 0 12px rgba(200,243,29,0.7);}
+  .segs-legend{display:flex; justify-content:space-between; font-size:11px; color:var(--faint); font-weight:600; text-transform:uppercase;}
+  .badges{display:flex; gap:8px; margin-top:20px; align-items:center;}
+  .hex{
+    width:36px; height:40px; display:grid; place-items:center; background:var(--lime); color:var(--lime-ink);
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  }
+  .hex svg{width:18px; height:18px;}
+
+  .club{background:#262041; padding:16px; position:relative; overflow:hidden;}
+  .club::before{content:""; position:absolute; inset:0; background:var(--stripes); pointer-events:none;}
+  .club__top{display:flex; gap:14px; align-items:center; position:relative;}
+  .club__logo{
+    width:62px; height:62px; flex:0 0 auto; display:grid; place-items:center;
+    background:#6b3fd4; font-stretch:125%; font-weight:900; font-size:22px; color:#fff;
+  }
+  .club__name{font-size:20px; line-height:1; display:flex; align-items:center; gap:8px;}
+  .tag-gold{font-size:9px; font-weight:800; letter-spacing:.08em; padding:2px 5px; background:var(--gold); color:#221a00; font-stretch:115%;}
+  .club__note{font-size:11px; color:var(--dim); margin:4px 0 8px;}
+  .club__stats{display:flex; gap:18px;}
+  .club__stats b{display:block; font-size:22px; line-height:1; font-stretch:110%;}
+  .club__stats span{font-size:10px; color:var(--dim);}
+  .next{background:var(--surface-2); padding:14px 16px; margin-top:6px;}
+  .next__row{display:flex; justify-content:space-between; align-items:center; font-size:12px; margin-bottom:10px;}
+  .next__row a{font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; font-stretch:115%;}
+  .next__title{font-size:15px; line-height:1.1; margin-bottom:8px;}
+  .next__meta{display:flex; justify-content:space-between; font-size:11px; color:var(--dim);}
+
+  /* ───────── Pestañas + tarjetas de herramientas ───────── */
+  .tabs{display:flex; gap:28px; border-bottom:1px solid var(--line); margin:34px 0 22px; position:relative;}
+  .tabs button{
+    background:none; border:0; padding:0 0 12px; cursor:pointer; font:inherit; font-size:13px; font-weight:500;
+    color:var(--faint); transition:color .2s;
+  }
+  .tabs button.is-on{color:var(--text);}
+  .tabs__ink{position:absolute; bottom:-1px; left:0; height:2px; background:var(--lime);}
+
+  .tools{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  .tool{
+    position:relative; overflow:hidden; display:flex; flex-direction:column;
+    background:var(--surface-3) var(--stripes); padding:18px; min-height:236px;
+    text-decoration:none; transition:transform .3s cubic-bezier(.2,.7,.2,1), box-shadow .3s;
+  }
+  .tool::after{
+    content:""; position:absolute; inset:0; pointer-events:none; border:1px solid transparent; transition:border-color .25s;
+  }
+  .tool:hover{transform:translateY(-4px); box-shadow:0 18px 40px rgba(0,0,0,0.45);}
+  .tool:hover::after, .tool:focus-visible::after{border-color:var(--lime);}
+  .tool:focus-visible{outline:none;}
+  .tool--featured{background:linear-gradient(140deg, #3a2a6a 0%, #2a2440 45%, #242a2f 100%);}
+  .tool--featured::before{content:""; position:absolute; inset:0; background:var(--stripes); pointer-events:none;}
+  .tool > *{position:relative;}
+  .tool__flag{font-size:10px; font-weight:800; letter-spacing:.1em; color:var(--lime); text-transform:uppercase; margin-bottom:4px; font-stretch:115%;}
+  .tool__title{font-size:17px; line-height:1.08; margin:0 0 6px;}
+  .tool__place{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--dim); margin-bottom:12px;}
+  .tool__place svg{width:12px; height:12px;}
+  .chips{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:16px;}
+  .chips span{
+    background:rgba(255,255,255,0.08); color:var(--dim); padding:3px 8px;
+    font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  }
+  .tool__line{font-size:13px; font-weight:500; margin-bottom:auto;}
+  .tool__foot{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:18px; font-size:11px; color:var(--dim);}
+
+  /* Botón: rectángulo blanco con chevrón; el relleno lima barre al pasar (patrón uiverse) */
+  .btn{
+    position:relative; isolation:isolate; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:7px 12px; background:#f2f3f4; color:#111; border:0; cursor:pointer; text-decoration:none;
+    font-family:inherit; font-stretch:115%; font-weight:800; font-size:11px; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap;
+  }
+  .btn::before{
+    content:""; position:absolute; inset:0; z-index:-1; background:var(--lime);
+    transform:scaleX(0); transform-origin:left; transition:transform .35s cubic-bezier(.7,0,.2,1);
+  }
+  .btn svg{width:10px; height:10px; transition:transform .3s ease;}
+  .btn:hover::before, .tool:hover .btn::before, .tool:focus-visible .btn::before{transform:scaleX(1);}
+  .btn:hover svg, .tool:hover .btn svg{transform:translateX(3px);}
+  .btn--lime{background:var(--lime);}
+  .btn--lime::before{background:#fff;}
+
+  /* ───────── Pantalla de carga ───────── */
+  .loader{
+    position:fixed; inset:0; z-index:50; display:grid; place-items:center;
+    background:var(--bg) var(--stripes);
+  }
+  .loader__box{width:min(440px, calc(100% - 32px));}
+  .loader__brand{display:flex; align-items:center; gap:12px; margin-bottom:34px;}
+  .loader__brand .brand__mark{background:var(--lime); color:var(--lime-ink); width:44px; height:38px; font-size:18px;}
+  .loader__brand b{font-stretch:125%; font-weight:900; font-size:22px; text-transform:uppercase; line-height:1;}
+  .loader__brand span{display:block; font-size:11px; color:var(--dim); letter-spacing:.2em; text-transform:uppercase; font-weight:700;}
+  .loader__row{display:flex; justify-content:space-between; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
+  .loader__row b{color:var(--lime); font-variant-numeric:tabular-nums;}
+  .loader .segs{grid-template-columns:repeat(24,1fr);}
+  .loader__tip{margin-top:22px; font-size:13px; color:var(--dim); line-height:1.5; min-height:40px;}
+  .loader__tip b{color:var(--text); font-weight:600;}
+  .loader.is-gone{display:none;}
+
+  @media (max-width:1020px){
+    .overview{grid-template-columns:1fr 1fr;}
+    .overview > :last-child{grid-column:1 / -1;}
+    .tools{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:760px){
+    .topbar{flex-wrap:wrap;}
+    .role{display:none;}
+    .nav{order:3; width:100%; border-top:1px solid var(--line); overflow-x:auto; margin:0; padding:0 4px; min-height:46px;}
+    .nav a{padding:0 12px;}
+    .season-pill{margin-left:auto;}
+    .subnav{gap:16px; flex-wrap:wrap;}
+    .overview, .tools{grid-template-columns:1fr;}
+  }
+  @media (max-width:420px){ .brand__name span{display:none;} .tile__num{font-size:24px;} }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="league-tag" id="leagueTag">RAMIREZ Y AMIGOS</div>
-    <div class="wordmark">
-      <div class="line1">FANTASY</div>
-      <div class="line2">FOOTBALL</div>
-    </div>
 
-    <div class="cards">
-      <a class="card" href="fantasy_standings.html">
-        <div class="icon">🏆</div>
-        <h2>Fantasy Standings</h2>
-        <p>Genera el póster de posiciones de la liga a partir de tu Google Sheet.</p>
-      </a>
-      <a class="card" href="survivor-league_new.html">
-        <div class="icon">🔥</div>
-        <h2>Survivor League</h2>
-        <p>Gestiona picks, eliminaciones y el póster semanal del survivor.</p>
-      </a>
-      <a class="card card-wide" href="race.html">
-        <div class="icon">📈</div>
-        <h2>Carrera de Posiciones</h2>
-        <p>Anima cómo cambiaron las posiciones semana a semana y descárgalo como video.</p>
-      </a>
-    </div>
-
-    <div class="missing-note">
-      <strong>Nota:</strong> esta página espera que <code>fantasy_standings.html</code> y <code>survivor-league_new.html</code> estén subidos en el mismo repositorio, con esos nombres exactos. Si renombras cualquiera de los dos archivos, edita el <code>href</code> del botón correspondiente en este archivo (<code>index.html</code>) para que coincida.
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader__box">
+      <div class="loader__brand">
+        <span class="brand__mark">RA</span>
+        <div><b>Ramirez y Amigos</b><span>Fantasy Football</span></div>
+      </div>
+      <div class="loader__row"><span>Cargando liga</span><b id="pct">0%</b></div>
+      <div class="segs" id="loadSegs"></div>
+      <p class="loader__tip" id="tip"></p>
     </div>
   </div>
+
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <span class="brand__mark">RA</span>
+        <span class="brand__name"><b>Ramirez</b><span>y Amigos</span></span>
+      </a>
+      <div class="role"><small>Liga de</small><b>Fantasy NFL</b></div>
+      <nav class="nav" aria-label="Herramientas">
+        <a class="is-current" href="index.html">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>Inicio</a>
+        <a href="fantasy_standings.html">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v3h4v3a5 5 0 0 1-5 5h-.3A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1A5 5 0 0 1 8.3 14H8a5 5 0 0 1-5-5V6h4zm10 5v4a3 3 0 0 0 2-3V8zM5 8v1a3 3 0 0 0 2 3V8z"/></svg>Standings</a>
+        <a href="survivor-league_new.html">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/></svg>Survivor</a>
+        <a href="race.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 17l6-6 4 4 8-8"/></svg>Carrera</a>
+      </nav>
+      <span class="season-pill">Temporada 2026</span>
+    </header>
+    <div class="subnav">
+      <a href="fantasy_standings.html">Póster de posiciones</a>
+      <a href="survivor-league_new.html">Tabla del survivor</a>
+      <a href="race.html">Video de la carrera</a>
+    </div>
+
+    <main class="board">
+      <section class="overview">
+        <div class="reveal">
+          <h1 class="greet">Hola, bienvenido de vuelta</h1>
+          <div class="tiles">
+            <div class="tile">
+              <svg class="tile__icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v15H4zM4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+              <div class="tile__num" data-count id="stWeek">—</div>
+              <div class="tile__lbl mk">Semana</div>
+            </div>
+            <div class="tile">
+              <svg class="tile__icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/></svg>
+              <div class="tile__num" data-count id="stAlive">—</div>
+              <div class="tile__lbl mk">Vivos</div>
+            </div>
+            <div class="tile">
+              <svg class="tile__icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a8 8 0 0 0-8 8c0 3 1.6 5 3 6v3h10v-3c1.4-1 3-3 3-6a8 8 0 0 0-8-8zM9 10a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm6 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg>
+              <div class="tile__num" data-count id="stOut">—</div>
+              <div class="tile__lbl mk">Eliminados</div>
+            </div>
+          </div>
+          <a class="btn wide-btn" href="survivor-league_new.html">Ver tabla del survivor
+            <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 1l4 4-4 4"/></svg></a>
+          <div class="meta" id="metaLine">Los datos se leen de lo que guardaron las herramientas en este navegador.</div>
+        </div>
+
+        <div class="reveal">
+          <div class="block-head mk">Temporada regular</div>
+          <div class="level">
+            <span class="level__badge"></span>
+            <span class="level__name wide" id="lvlName">Sin semana</span>
+          </div>
+          <div class="level__sub" id="lvlSub">Pon el número de semana en Fantasy Standings y aparecerá aquí</div>
+          <div class="segs" id="seasonSegs"></div>
+          <div class="segs-legend"><span>Semana 1</span><span id="lvlLeft">Semana 18</span></div>
+          <div class="block-head mk" style="margin-top:22px;">Herramientas</div>
+          <div class="badges">
+            <a class="hex" href="fantasy_standings.html" title="Fantasy Standings">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v3h4v3a5 5 0 0 1-5 5h-.3A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1A5 5 0 0 1 8.3 14H8a5 5 0 0 1-5-5V6h4z"/></svg></a>
+            <a class="hex" href="survivor-league_new.html" title="Survivor League">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"/></svg></a>
+            <a class="hex" href="race.html" title="Carrera de Posiciones">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 17l6-6 4 4 8-8"/></svg></a>
+          </div>
+        </div>
+
+        <div class="reveal">
+          <div class="club">
+            <div class="club__top">
+              <div class="club__logo">RA</div>
+              <div>
+                <div class="club__name wide"><span id="leagueName">Ramirez y Amigos</span> <span class="tag-gold">Liga</span></div>
+                <div class="club__note">Tu liga de fantasía</div>
+                <div class="club__stats">
+                  <div><b id="stTotal">—</b><span>Jugadores</span></div>
+                  <div><b id="stRate">—</b><span>Siguen vivos</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="next">
+            <div class="next__row"><span class="mk">Siguiente paso</span><a href="fantasy_standings.html">Abrir</a></div>
+            <div class="next__title wide" id="nextTitle">Póster de la semana</div>
+            <div class="next__meta"><span>Google Sheet → PNG</span><span id="nextWeek"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="tabs" role="tablist">
+        <button class="is-on" type="button">Herramientas</button>
+        <button type="button" disabled>Archivo de temporadas</button>
+        <span class="tabs__ink" id="tabsInk"></span>
+      </div>
+
+      <section class="tools">
+        <a class="tool" href="fantasy_standings.html">
+          <h2 class="tool__title wide">Fantasy Standings</h2>
+          <div class="tool__place"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 0a4 4 0 0 0-4 4c0 3 4 8 4 8s4-5 4-8a4 4 0 0 0-4-4zm0 5.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>Desde tu Google Sheet</div>
+          <div class="chips"><span>Póster</span><span>PNG / JPG</span><span>Semanal</span></div>
+          <div class="tool__line mk">Tabla de posiciones de la liga</div>
+          <div class="tool__foot"><span>Lista o dos columnas</span>
+            <span class="btn">Abrir herramienta <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 1l4 4-4 4"/></svg></span></div>
+        </a>
+        <a class="tool tool--featured" href="survivor-league_new.html">
+          <div class="tool__flag">Destacado</div>
+          <h2 class="tool__title wide">Survivor League</h2>
+          <div class="tool__place"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 0a4 4 0 0 0-4 4c0 3 4 8 4 8s4-5 4-8a4 4 0 0 0-4-4zm0 5.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>Quiniela de eliminación</div>
+          <div class="chips"><span>Picks</span><span>Vidas</span><span>Tarjetas</span></div>
+          <div class="tool__line mk">Picks, eliminaciones y póster semanal</div>
+          <div class="tool__foot"><span id="survFoot">Un equipo por semana</span>
+            <span class="btn btn--lime">Abrir herramienta <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 1l4 4-4 4"/></svg></span></div>
+        </a>
+        <a class="tool" href="race.html">
+          <h2 class="tool__title wide">Carrera de Posiciones</h2>
+          <div class="tool__place"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 0a4 4 0 0 0-4 4c0 3 4 8 4 8s4-5 4-8a4 4 0 0 0-4-4zm0 5.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>Puntos acumulados</div>
+          <div class="chips"><span>Animación</span><span>Video</span><span>4:5 / 16:9</span></div>
+          <div class="tool__line mk">Cómo cambiaron las posiciones</div>
+          <div class="tool__foot"><span>Semana a semana</span>
+            <span class="btn">Abrir herramienta <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 1l4 4-4 4"/></svg></span></div>
+        </a>
+      </section>
+    </main>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(function(){
+  var SEASON_WEEKS = 18;
+  var TIPS = [
+    ['Survivor', 'cada equipo sólo se puede elegir una vez. Guarda a los favoritos para las semanas difíciles.'],
+    ['Consejo', 'revisa el reporte de lesiones antes del jueves.'],
+    ['Standings', 'el póster se arma directo desde el Google Sheet de la liga.'],
+    ['Carrera', 'exporta el video y mándalo al grupo antes del lunes.']
+  ];
+  var $ = function(id){ return document.getElementById(id); };
+  function read(key){ try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch(e){ return null; } }
+
+  // ───── Datos reales guardados por las herramientas ─────
+  var fantasy = read('fantasy-poster-core') || {};
+  var surv = read('ra-survivor-summary');
+  var week = parseInt(fantasy.semana, 10);
+  if (!(week >= 1)) week = 0;
+  week = Math.min(week, SEASON_WEEKS);
+  if (fantasy.leagueName) $('leagueName').textContent = fantasy.leagueName;
+  if (week){
+    $('stWeek').textContent = week;
+    $('lvlName').textContent = 'Semana ' + week;
+    $('lvlSub').textContent = 'De ' + SEASON_WEEKS + ' semanas de temporada regular';
+    $('lvlLeft').textContent = (SEASON_WEEKS - week) ? 'Faltan ' + (SEASON_WEEKS - week) : 'Última semana';
+    $('nextWeek').textContent = 'Semana ' + week;
+  }
+  if (surv && surv.total){
+    $('stAlive').textContent = surv.alive;
+    $('stOut').textContent = surv.out;
+    $('stTotal').textContent = surv.total;
+    $('stRate').textContent = Math.round(surv.alive / surv.total * 100) + '%';
+    $('survFoot').textContent = surv.alive + ' de ' + surv.total + ' siguen vivos';
+    $('metaLine').textContent = 'Survivor actualizado: ' + new Date(surv.savedAt).toLocaleString('es-MX', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+  }
+
+  function fillSegs(el, n, on){
+    for (var i = 0; i < n; i++){
+      var s = document.createElement('i');
+      if (i < on) s.className = (i === on - 1) ? 'now' : 'on';
+      el.appendChild(s);
+    }
+  }
+  fillSegs($('seasonSegs'), SEASON_WEEKS, week);
+  fillSegs($('loadSegs'), 24, 0);
+
+  var tip = TIPS[Math.floor(Math.random() * TIPS.length)];
+  $('tip').innerHTML = '<b>' + tip[0] + ':</b> ' + tip[1];
+
+  // Línea lima bajo la pestaña activa
+  var on = document.querySelector('.tabs button.is-on'), ink = $('tabsInk');
+  function placeInk(){ ink.style.width = on.offsetWidth + 'px'; ink.style.transform = 'translateX(' + on.offsetLeft + 'px)'; }
+  placeInk(); window.addEventListener('resize', placeInk);
+
+  var loader = $('loader');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typeof window.gsap === 'undefined' || reduce){ loader.classList.add('is-gone'); return; }
+
+  var seen = false;
+  try { seen = sessionStorage.getItem('ra-intro-seen') === '1'; sessionStorage.setItem('ra-intro-seen', '1'); } catch(e){}
+
+  // ───── Carga: barra segmentada que se llena a tirones ─────
+  var loadSegs = $('loadSegs').children, pct = {v:0};
+  function tick(){
+    var lit = Math.round(pct.v / 100 * loadSegs.length);
+    for (var i = 0; i < loadSegs.length; i++) loadSegs[i].className = i < lit ? 'on' : '';
+    $('pct').textContent = Math.round(pct.v) + '%';
+  }
+  var tl = gsap.timeline();
+  tl.from('.loader__box > *', {y:16, opacity:0, duration:.6, stagger:.08, ease:'power3.out'});
+  if (seen) tl.to(pct, {v:100, duration:.45, ease:'power2.inOut', onUpdate:tick});
+  else tl.to(pct, {v:42, duration:.6, ease:'power2.out', onUpdate:tick})
+         .to(pct, {v:78, duration:.7, ease:'power1.inOut', onUpdate:tick}, '+=.2')
+         .to(pct, {v:100, duration:.4, ease:'power2.in', onUpdate:tick}, '+=.15');
+  tl.to(loader, {yPercent:-100, duration:.75, ease:'expo.inOut'}, '+=.15')
+    .set(loader, {className:'loader is-gone'})
+    .from('.topbar', {y:-24, opacity:0, duration:.7, ease:'expo.out', clearProps:'transform,opacity'}, '-=.35')
+    .from('.nav a', {y:-10, opacity:0, duration:.5, stagger:.05, ease:'power3.out', clearProps:'transform,opacity'}, '<.1')
+    .from('.subnav', {opacity:0, duration:.5, clearProps:'opacity'}, '<')
+    .from('.board', {y:30, opacity:0, duration:.8, ease:'expo.out', clearProps:'transform,opacity'}, '<.05')
+    .from('.reveal', {y:20, opacity:0, duration:.7, stagger:.08, ease:'expo.out', clearProps:'transform,opacity'}, '<.15')
+    .addLabel('counts', '<')
+    .from('#seasonSegs i', {scaleX:0, duration:.35, stagger:.025, ease:'power2.out', clearProps:'transform'}, '<.2')
+    .from('.hex', {scale:.4, opacity:0, duration:.5, stagger:.07, ease:'back.out(2)', clearProps:'transform,opacity'}, '<.2')
+    .from('.tool', {y:30, opacity:0, duration:.7, stagger:.09, ease:'expo.out', clearProps:'transform,opacity'}, '<');
+
+  // Los números de las fichas cuentan hacia arriba
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var n = parseInt(el.textContent, 10);
+    if (isNaN(n)) return;
+    var o = {v:0};
+    tl.to(o, {v:n, duration:1, ease:'power2.out', onUpdate:function(){ el.textContent = Math.round(o.v); }}, 'counts');
+  });
+
+  // Salida hacia una herramienta: la tarjeta se queda y el resto se desvanece
+  document.querySelectorAll('a[href$=".html"]').forEach(function(a){
+    if (a.getAttribute('href') === 'index.html') return;
+    a.addEventListener('click', function(e){
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      gsap.to('.shell', {opacity:0, y:-12, duration:.35, ease:'power2.in', onComplete:function(){ location.href = a.href; }});
+    });
+  });
+  window.addEventListener('pageshow', function(e){ if (e.persisted) gsap.set('.shell', {clearProps:'opacity,transform'}); });
+})();
+</script>
 </body>
 </html>

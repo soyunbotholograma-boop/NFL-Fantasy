@@ -342,8 +342,147 @@
   }
   .back-home:hover{background:rgba(255,255,255,0.12);border-color:var(--purple);}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wdth,wght@100..125,300..900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style id="ra-ui">
+  /* ====== Interfaz RA — mismo tema que la portada (index.html): carbón + lima ======
+     Sólo cambia los controles. El póster, la tabla, las tarjetas y el canvas que se
+     exportan conservan su diseño y sus fuentes. */
+  body.ra-ui{
+    --ra-ink:#0b0d0f; --ra-surface:#15181b; --ra-surface-2:#1d2125; --ra-surface-3:#272c31; --ra-field:#0f1214;
+    --ra-line:rgba(255,255,255,0.07); --ra-line-2:rgba(255,255,255,0.13);
+    --ra-chalk:#eef0f1; --ra-dim:#9aa1a8; --ra-faint:#646c74;
+    --ra-accent:#c8f31d; --ra-accent-ink:#101400; --ra-danger:#ff5a4e;
+    --ra-stripes:repeating-linear-gradient(135deg, rgba(255,255,255,0.022) 0 2px, transparent 2px 10px);
+    --ra-font:'Saira', system-ui, sans-serif;
+    background:var(--ra-ink); isolation:isolate;
+  }
+  /* Resplandor lima arriba y filo lima a la izquierda */
+  body.ra-ui::before{
+    content:""; position:fixed; inset:0 0 auto 0; height:320px; z-index:-1; pointer-events:none; clip-path:none; opacity:1;
+    background:radial-gradient(ellipse 70% 100% at 50% 0%, rgba(200,243,29,0.16) 0%, rgba(200,243,29,0) 70%);
+  }
+  body.ra-ui::after{
+    content:""; position:fixed; left:0; top:0; bottom:0; width:5px; z-index:-1; pointer-events:none;
+    background:linear-gradient(180deg, #c8f31d 0%, rgba(200,243,29,0.25) 60%, rgba(200,243,29,0) 100%);
+  }
+  body.ra-ui ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.14); border-radius:0; }
+  body.ra-ui ::-webkit-scrollbar-track{ background:transparent; }
+
+  body.ra-ui .back-home, body.ra-ui .back{
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+    font-family:var(--ra-font); font-stretch:115%; font-weight:800; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ra-chalk); background:var(--ra-surface-3); border:0; border-radius:0;
+    padding:8px 14px; transition:background-color .2s ease, color .2s ease;
+  }
+  body.ra-ui .back-home:hover, body.ra-ui .back:hover{ background:var(--ra-accent); color:var(--ra-accent-ink); border-color:transparent; }
+
+  /* Título en dos pesos: renglón ligero arriba, palabra ancha y pesada abajo */
+  .ra-lite{
+    display:block; font-family:'Saira', system-ui, sans-serif; font-stretch:100%; font-weight:500; font-style:normal;
+    text-transform:none; letter-spacing:0; font-size:.52em; line-height:1.15; color:#9aa1a8; margin-bottom:.15em;
+  }
+  /* Viñeta lima tipo bandera */
+  .ra-mk::before{
+    content:""; display:inline-block; width:11px; height:8px; margin-right:7px; vertical-align:.05em; background:#c8f31d;
+    clip-path:polygon(0 0, 62% 0, 100% 50%, 62% 100%, 0 100%);
+  }
+
+  /* Botones rectangulares; un relleno barre de izquierda a derecha al pasar el mouse */
+  body.ra-ui .btn{
+    position:relative; isolation:isolate; overflow:hidden; border:0; border-radius:0;
+    font-family:var(--ra-font); font-stretch:115%; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    background:var(--ra-accent); color:var(--ra-accent-ink); filter:none;
+    transition:color .3s ease, transform .12s ease, opacity .2s ease;
+    --ra-sweep:#ffffff; --ra-sweep-ink:#111;
+  }
+  body.ra-ui .btn::before{
+    content:""; position:absolute; inset:0; z-index:-1; background:var(--ra-sweep);
+    transform:scaleX(0); transform-origin:left; transition:transform .38s cubic-bezier(.7,0,.2,1);
+  }
+  body.ra-ui .btn:hover:not(:disabled){ color:var(--ra-sweep-ink); filter:none; }
+  body.ra-ui .btn:hover:not(:disabled)::before{ transform:scaleX(1); }
+  body.ra-ui .btn:active:not(:disabled){ transform:scale(.98); }
+  body.ra-ui .btn:focus-visible{ outline:2px solid var(--ra-accent); outline-offset:2px; }
+  body.ra-ui .btn:disabled{ opacity:.35; }
+
+  .ra-curtain{ position:fixed; inset:0; z-index:9999; background:#0b0d0f; transform:scaleX(0); transform-origin:left; pointer-events:none; }
+  .ra-curtain::after{ content:""; position:absolute; top:0; bottom:0; right:-5px; width:5px; background:#c8f31d; }
+
+  /* Panel de controles */
+  body.ra-ui .panel{
+    background:var(--ra-surface) var(--ra-stripes); border:1px solid var(--ra-line); border-radius:0;
+    padding:24px 20px; box-shadow:0 24px 60px rgba(0,0,0,0.45);
+  }
+  body.ra-ui .panel h1{
+    font-family:var(--ra-font); font-stretch:125%; font-weight:800; text-transform:uppercase;
+    font-size:25px; line-height:1.02; letter-spacing:.005em; margin:0 0 12px; color:var(--ra-chalk);
+  }
+  body.ra-ui .panel .sub{ font-family:var(--ra-font); font-size:12.5px; line-height:1.55; color:var(--ra-dim); margin:0 0 20px; }
+  body.ra-ui .field > label{
+    font-family:var(--ra-font); font-weight:600; font-size:11.5px; letter-spacing:.06em; color:var(--ra-chalk); margin-bottom:7px;
+  }
+  body.ra-ui .field > label::before{
+    content:""; display:inline-block; width:10px; height:7px; margin-right:7px; vertical-align:.08em; background:var(--ra-accent);
+    clip-path:polygon(0 0, 62% 0, 100% 50%, 62% 100%, 0 100%);
+  }
+  body.ra-ui .field label .opt{ font-weight:400; letter-spacing:0; color:var(--ra-faint); }
+  body.ra-ui .field input[type=text], body.ra-ui .field select{
+    font-family:var(--ra-font); font-size:13px; color:var(--ra-chalk);
+    background:var(--ra-field); border:1px solid var(--ra-line-2); border-radius:0; padding:10px 12px;
+    transition:border-color .2s ease, background-color .2s ease;
+  }
+  body.ra-ui .field input[type=text]:focus, body.ra-ui .field select:focus{ outline:none; border-color:var(--ra-accent); background:#13171a; }
+  body.ra-ui .field input::placeholder{ color:var(--ra-faint); }
+  body.ra-ui .field select option{ background:var(--ra-surface-2); color:var(--ra-chalk); }
+  body.ra-ui .hint{ font-family:var(--ra-font); font-size:11.5px; line-height:1.45; color:var(--ra-faint); }
+  body.ra-ui input[type=range]{ accent-color:var(--ra-accent); }
+  body.ra-ui .btn{ padding:12px 14px; font-size:12px; }
+  body.ra-ui .btn-download{ background:#f2f3f4; color:#111; --ra-sweep:var(--ra-accent); --ra-sweep-ink:var(--ra-accent-ink); }
+  body.ra-ui .btn-ghost{
+    background:var(--ra-surface-3); color:var(--ra-chalk); border:0;
+    --ra-sweep:#343a40; --ra-sweep-ink:var(--ra-chalk);
+  }
+  body.ra-ui .divider, body.ra-ui hr{ border-top-color:var(--ra-line); }
+
+  body.ra-ui .status{ font-family:var(--ra-font); border-radius:0; padding:9px 12px; }
+  body.ra-ui .layout-toggle{ gap:2px; }
+  body.ra-ui .layout-opt{
+    border:0; border-radius:0; background:var(--ra-surface-3); color:var(--ra-dim);
+    font-family:var(--ra-font); font-stretch:115%; font-weight:800; font-size:11px; letter-spacing:.06em; padding:10px 6px;
+    transition:background-color .25s ease, color .25s ease;
+  }
+  body.ra-ui .layout-opt:hover:not(.active){ color:var(--ra-chalk); background:#30363c; }
+  body.ra-ui .layout-opt.active{ background:var(--ra-accent); color:var(--ra-accent-ink); }
+  body.ra-ui details.advanced summary{ font-family:var(--ra-font); font-stretch:115%; font-weight:800; letter-spacing:.06em; font-size:11px; color:var(--ra-accent); }
+  body.ra-ui .save-status{ font-family:var(--ra-font); }
+  body.ra-ui .logo-slot{ border-radius:0; border:1px dashed rgba(255,255,255,0.2); background:var(--ra-field); transition:border-color .2s; }
+  body.ra-ui .logo-slot:hover{ border-color:var(--ra-accent); }
+  body.ra-ui .logo-slot .plus, body.ra-ui .nfl-logo-row .txt{ color:var(--ra-faint); font-family:var(--ra-font); }
+  body.ra-ui .player-logo-list{ border:1px solid var(--ra-line); border-radius:0; background:var(--ra-field); }
+  body.ra-ui .player-logo-row{ border-bottom-color:var(--ra-line); }
+  body.ra-ui .player-logo-row .plog{ border-radius:0; border-color:var(--ra-line-2); background:var(--ra-surface-2); }
+  body.ra-ui .player-logo-row .pname{ font-family:var(--ra-font); font-stretch:110%; font-weight:700; font-size:12.5px; text-transform:uppercase; }
+  body.ra-ui .player-logo-row .prm{ font-family:var(--ra-font); color:var(--ra-faint); }
+
+  body.ra-ui .modal-overlay{ background:rgba(5,6,7,0.78); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+  body.ra-ui .modal-box{ background:var(--ra-surface) var(--ra-stripes); border:1px solid var(--ra-line); border-top:3px solid var(--ra-accent); border-radius:0; padding:20px; box-shadow:0 40px 90px rgba(0,0,0,0.6); }
+  body.ra-ui .modal-head h3{ font-family:var(--ra-font); font-stretch:125%; font-weight:800; text-transform:uppercase; font-size:17px; }
+  body.ra-ui .modal-close{ width:32px; height:32px; background:var(--ra-surface-3); }
+  body.ra-ui #teamPickerSearch{
+    font-family:var(--ra-font); font-size:13px; background:var(--ra-field); border:1px solid var(--ra-line-2);
+    border-radius:0; padding:10px 12px; transition:border-color .2s ease;
+  }
+  body.ra-ui #teamPickerSearch:focus{ outline:none; border-color:var(--ra-accent); }
+  body.ra-ui .team-pick-tile{ border-radius:0; border:1px solid transparent; background:var(--ra-surface-3); font-family:var(--ra-font); transition:border-color .2s ease, transform .2s ease; }
+  body.ra-ui .team-pick-tile:hover:not(:disabled){ border-color:var(--ra-accent); background:#30363c; transform:translateY(-2px); }
+  body.ra-ui .modal-foot .btn{ padding:10px 8px; font-size:11px; }
+  /* Etiquetas con color en línea (morado del tema anterior) */
+  body.ra-ui #panel label[style]{ font-family:var(--ra-font) !important; letter-spacing:.06em !important; color:var(--ra-chalk) !important; }
+  body.ra-ui #panel label .opt[style]{ color:var(--ra-faint) !important; letter-spacing:0 !important; }
+</style>
 </head>
-<body>
+<body class="ra-ui">
 
 <div class="back-home-bar"><a class="back-home" href="index.html">&larr; Inicio</a></div>
 
@@ -354,7 +493,7 @@
 
   <!-- ============ CONTROL PANEL (not exported) ============ -->
   <div class="panel" id="panel">
-    <h1>Generador de Fantasy Standings</h1>
+    <h1><span class="ra-lite">Generador de</span>Fantasy Standings</h1>
     <p class="sub">Configura el link de tu Google Sheet, tu logo y los logos de cada jugador una sola vez — quedan guardados en este navegador. Cada semana solo abres el archivo, pones el número de semana y descargas.</p>
 
     <div class="field">
@@ -1543,5 +1682,61 @@ function applyStateToUI(){
 })();
 </script>
 
+<script id="ra-motion">
+/* ====== Movimiento RA (GSAP) — entradas, transiciones y microinteracciones.
+   Nada de esto cambia lo que se exporta: antes de cada captura las animaciones
+   saltan a su final, y todas limpian sus estilos en línea al terminar. ====== */
+(function(){
+  if (typeof window.gsap === 'undefined') return;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (typeof window.html2canvas === 'function'){
+    var capture = window.html2canvas;
+    window.html2canvas = function(){
+      gsap.globalTimeline.getChildren(false, true, true).forEach(function(t){ t.progress(1); });
+      return capture.apply(this, arguments);
+    };
+  }
+
+  // Regreso a la portada: una cortina barre la pantalla antes de salir
+  document.querySelectorAll('a.back-home, a.back').forEach(function(a){
+    a.addEventListener('click', function(e){
+      if (reduce || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      var c = document.createElement('div');
+      c.className = 'ra-curtain';
+      document.body.appendChild(c);
+      gsap.to(c, {scaleX:1, duration:.45, ease:'power3.inOut', onComplete:function(){ location.href = a.href; }});
+    });
+  });
+  window.addEventListener('pageshow', function(e){
+    if (e.persisted) document.querySelectorAll('.ra-curtain').forEach(function(c){ c.remove(); });
+  });
+
+  if (reduce) return;
+  var CLEAR = 'transform,opacity';
+  var enter = gsap.timeline({defaults:{ease:'expo.out', duration:.9, clearProps:CLEAR}});
+  enter
+    .from('.back-home', {x:-24, opacity:0, duration:.6})
+    .from('#panel', {x:-40, opacity:0}, .05)
+    .from('#panel > *', {y:14, opacity:0, duration:.6, stagger:.025}, .15)
+    .from('#poster', {x:60, opacity:0, duration:1.1}, .12);
+
+  // Las filas entran en cascada cada vez que se actualiza el póster
+  var rows = document.getElementById('rowsContainer');
+  if (rows) new MutationObserver(function(){
+    var items = rows.querySelectorAll('.rowline');
+    if (!items.length) return;
+    gsap.fromTo(items, {opacity:0, x:-14}, {opacity:1, x:0, duration:.5, stagger:.022, ease:'power3.out', overwrite:true, clearProps:CLEAR});
+  }).observe(rows, {childList:true});
+
+  var overlay = document.getElementById('teamPickerOverlay');
+  if (overlay) new MutationObserver(function(){
+    if (!overlay.classList.contains('show')) return;
+    gsap.fromTo(overlay.querySelector('.modal-box'), {y:28, opacity:0, scale:.97}, {y:0, opacity:1, scale:1, duration:.5, ease:'expo.out', clearProps:CLEAR});
+    gsap.fromTo(overlay.querySelectorAll('.team-pick-tile'), {opacity:0, y:8}, {opacity:1, y:0, duration:.35, stagger:.008, delay:.08, ease:'power2.out', clearProps:CLEAR});
+  }).observe(overlay, {attributes:true, attributeFilter:['class']});
+})();
+</script>
 </body>
 </html>
