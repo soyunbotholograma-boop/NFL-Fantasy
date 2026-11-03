@@ -8,8 +8,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="css/survivor.css">
+<link href="https://fonts.googleapis.com/css2?family=Saira:wdth,wght@100..125,300..900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 </head>
-<body>
+<body class="ra-ui">
 <div class="panel not-admin" id="notAdmin" hidden>
   <div class="league-tag">Ramirez y Amigos</div>
   <p>Esta página es solo para administradores. Tus picks y tus tablas están en <b>Mi Portal</b>.</p>
@@ -50,7 +52,7 @@
         <div class="publish-row">
           <label class="empty-note" for="publishWeek" title="Los jugadores verán tablas, vidas y posiciones hasta esta semana">Publicar hasta:</label>
           <select id="publishWeek"></select>
-          <button class="btn" id="btnPublish" title="Los jugadores solo ven lo que publiques">📣 Publicar</button>
+          <button class="btn" id="btnPublish" title="Los jugadores solo ven lo que publiques">Publicar</button>
         </div>
         <div class="save-status" id="publishStatus"></div>
         <div class="save-status ok" id="saveStatus">Conectando…</div>
@@ -90,6 +92,16 @@
         <div class="group">
           <label class="empty-note" title="Si tienes muchos jugadores, divide la tabla en varias imagenes para que no salga apretada">Jugadores por imagen:</label>
           <input type="number" id="playersPerImage" min="1" step="1" placeholder="Todos" style="width:70px;">
+        </div>
+        <div class="group">
+          <label class="switch-row" title="Los jugadores sin vidas no salen en la imagen descargada">
+            <input type="checkbox" id="hideEliminatedExport">
+            <span>Ocultar eliminados en la imagen</span>
+          </label>
+          <label class="switch-row" title="Con eliminados ocultos, deja en la imagen a quienes perdieron su ultima vida en la ultima semana con resultados del rango">
+            <input type="checkbox" id="keepJustEliminatedExport" disabled>
+            <span>Incluir a los eliminados de esta semana</span>
+          </label>
         </div>
       </div>
       <div id="tableExportArea">
@@ -271,7 +283,8 @@
         <span class="empty-note">Tarjeta individual de cada jugador. Puedes descargar cada una por separado.</span>
         <button class="btn" id="btnExportAllCards">Descargar todas (PNG)</button>
         <button class="btn ghost small" id="btnExportAllCardsSeparate">Descargar cada una por separado (PNG)</button>
-        <button class="btn ghost small" id="btnExportAliveCards">Descargar solo vivos (PNG)</button>
+        <button class="btn ghost small" id="btnExportAliveCardsTogether">Descargar solo vivos juntas (PNG)</button>
+        <button class="btn ghost small" id="btnExportAliveCards">Descargar solo vivos por separado (PNG)</button>
       </div>
       <div class="cards-grid" id="cardsGrid"></div>
     </div>
@@ -281,6 +294,7 @@
 
 <script src="js/league-core.js"></script>
 <script src="js/supa.js"></script>
+<script src="js/ra-motion.js"></script>
 <script>
 /* =====================================================================
    ADMIN · Survivor League
@@ -523,6 +537,8 @@ function renderScoreboard(){
   document.getElementById('scAlive').textContent = alive;
   document.getElementById('scOut').textContent = out;
   document.getElementById('scTotal').textContent = state.players.length;
+  // Resumen que lee la portada (index.html) para mostrar el marcador
+  try{ localStorage.setItem('ra-survivor-summary', JSON.stringify({ alive, out, total: state.players.length, savedAt: Date.now() })); }catch(e){}
 }
 
 /* ---------------- RENDER: PICKS TAB ---------------- */
@@ -986,8 +1002,20 @@ document.getElementById('btnExportTable').addEventListener('click', async ()=>{
 
   const perImageRaw = parseInt(document.getElementById('playersPerImage').value, 10);
   const perImage = Number.isFinite(perImageRaw) && perImageRaw > 0 ? perImageRaw : 0;
-  const chunks = chunkPlayers(sortPlayersByLives(state.players), perImage);
-  const scale = computeExportScale(rangeWeeks.length, perImage || state.players.length);
+  const hideEliminated = document.getElementById('hideEliminatedExport').checked;
+  const keepJustEliminated = hideEliminated && document.getElementById('keepJustEliminatedExport').checked;
+  /* "Esta semana" = la ultima semana del rango que ya tiene marcadores. */
+  const lastResultWeek = [...rangeWeeks].reverse().find(w=> (state.finished[w.key] || []).length);
+  const lastIdx = lastResultWeek ? WEEKS.indexOf(lastResultWeek) : -1;
+  const eliminatedThisWeek = p=> lastIdx >= 0
+    && livesAfterWeeks(p, lastIdx) > 0
+    && livesAfterWeeks(p, lastIdx + 1) <= 0;
+  const exportPlayers = hideEliminated
+    ? state.players.filter(p=> playerTimeline(p).lives > 0 || (keepJustEliminated && eliminatedThisWeek(p)))
+    : state.players;
+  if(!exportPlayers.length){ alert('No hay jugadores vivos para exportar.'); return; }
+  const chunks = chunkPlayers(sortPlayersByLives(exportPlayers), perImage);
+  const scale = computeExportScale(rangeWeeks.length, Math.min(perImage || exportPlayers.length, exportPlayers.length));
 
   const subtitle = document.getElementById('tableSubtitle');
   const prevSubtitle = subtitle.textContent;
@@ -1024,8 +1052,32 @@ document.getElementById('btnExportTable').addEventListener('click', async ()=>{
     btn.textContent = prevBtnText;
   }
 });
+document.getElementById('hideEliminatedExport').addEventListener('change', e=>{
+  const keep = document.getElementById('keepJustEliminatedExport');
+  keep.disabled = !e.target.checked;
+  if(!e.target.checked) keep.checked = false;
+});
 document.getElementById('btnExportAllCards').addEventListener('click', ()=>{
   exportElementAsPng(document.getElementById('cardsGrid'), 'survivor-league-tarjetas.png');
+});
+/* Una sola imagen con las tarjetas de los vivos: las de eliminados se ocultan solo durante la captura. */
+document.getElementById('btnExportAliveCardsTogether').addEventListener('click', async (e)=>{
+  const btn = e.currentTarget;
+  const dead = state.players
+    .map((p, idx)=> ({ el: document.getElementById('card-'+idx), alive: playerTimeline(p).lives > 0 }))
+    .filter(t=> t.el && !t.alive);
+  if(dead.length === state.players.length){ alert('No hay jugadores vivos.'); return; }
+  const prevLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generando…';
+  dead.forEach(t=> t.el.style.display = 'none');
+  try{
+    await exportElementAsPng(document.getElementById('cardsGrid'), 'survivor-league-tarjetas-vivos.png');
+  } finally {
+    dead.forEach(t=> t.el.style.display = '');
+    btn.textContent = prevLabel;
+    btn.disabled = false;
+  }
 });
 async function exportCardsIndividually(onlyAlive, btn){
   const targets = state.players
@@ -1404,4 +1456,6 @@ mountAuthGate({
   }
 });
 </script>
+
+
 </body></html>

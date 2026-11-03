@@ -120,6 +120,15 @@ function playerTimeline(player){
 }
 function currentLives(player){ return playerTimeline(player).lives; }
 function isOut(player){ return currentLives(player) <= 0; }
+/* Vidas contando solo las primeras `weekCount` semanas (misma regla que playerTimeline). */
+function livesAfterWeeks(player, weekCount){
+  const keep = new Set(WEEKS.slice(0, weekCount).map(w=>w.key));
+  const only = o=> Object.fromEntries(Object.entries(o || {}).filter(([k])=> keep.has(k)));
+  const all = { finished: state.finished, results: state.results };
+  state.finished = only(all.finished);
+  state.results = only(all.results);
+  try{ return playerTimeline(player).lives; } finally { state.finished = all.finished; state.results = all.results; }
+}
 
 let scheduleIndexCache = null, scheduleIndexSrc = null; // weekKey -> { abbr: rival }
 function scheduleIndex(){

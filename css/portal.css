@@ -85,3 +85,67 @@ table.standings tr.me td{ background:var(--blue-dim); }
 .mv.down{ color:var(--loss); }
 .mv.same{ color:var(--chalk-dim); }
 .standings-scroll{ overflow-x:auto; }
+
+/* ====== Interfaz RA (tema de la portada) — sólo controles; la tarjeta y la tabla que se
+   exportan conservan su diseño ====== */
+body.ra-ui .me-name{ font-family:var(--ra-font); font-stretch:125%; font-weight:900; letter-spacing:0; }
+body.ra-ui .me-lives, body.ra-ui .pub-note{ font-family:var(--ra-font); color:var(--ra-dim); }
+body.ra-ui .pub-note b{ color:var(--ra-accent); }
+body.ra-ui .portal-msg{ border-radius:0; border-color:var(--ra-line-2); font-family:var(--ra-font); color:var(--ra-dim); }
+body.ra-ui .flash{ font-family:var(--ra-font); }
+body.ra-ui .flash.ok{ color:var(--ra-accent); }
+body.ra-ui .flash.err{ color:var(--ra-danger); }
+body.ra-ui .section-lbl{ font-family:var(--ra-font); }
+
+/* Equipos del survivor: fichas rectas; al pasar el mouse un filo lima barre por debajo */
+body.ra-ui .team-tile{
+  overflow:hidden; isolation:isolate; border:0; border-radius:0; background:var(--ra-surface-3) var(--ra-stripes);
+  font-family:var(--ra-font); box-shadow:inset 0 0 0 1px transparent;
+  transition:transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease, background-color .25s ease;
+}
+body.ra-ui .team-tile::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--ra-accent);
+  transform:scaleX(0); transform-origin:left; transition:transform .35s cubic-bezier(.7,0,.2,1);
+}
+body.ra-ui .team-tile:hover:not(:disabled){ transform:translateY(-3px); background-color:var(--ra-surface-2); box-shadow:inset 0 0 0 1px var(--ra-line-2), 0 14px 30px rgba(0,0,0,0.4); border-color:transparent; }
+body.ra-ui .team-tile:hover:not(:disabled)::after{ transform:scaleX(1); }
+body.ra-ui .team-tile.selected{ background:rgba(200,243,29,0.12); box-shadow:inset 0 0 0 2px var(--ra-accent); }
+body.ra-ui .team-tile.selected::after{ transform:scaleX(1); }
+body.ra-ui .team-tile .tt-abbr{ font-stretch:120%; font-weight:800; }
+body.ra-ui .team-tile .tt-vs{ font-family:var(--ra-font); color:var(--ra-dim); }
+body.ra-ui .team-tile .tt-flag{ font-family:var(--ra-font); border-radius:0; background:rgba(0,0,0,.45); }
+body.ra-ui .team-tile.selected .tt-flag{ background:var(--ra-accent); color:var(--ra-accent-ink); }
+
+/* Pick'em */
+body.ra-ui .pk-points{ font-family:var(--ra-font); }
+body.ra-ui .pk-points b{ color:var(--ra-accent); font-stretch:110%; }
+body.ra-ui .pk-row{ border:0; border-radius:0; background:var(--ra-surface-2); border-left:3px solid transparent; transition:border-color .2s ease; }
+body.ra-ui .pk-row:hover{ border-left-color:var(--ra-accent); }
+body.ra-ui .pk-time, body.ra-ui .pk-result{ font-family:var(--ra-font); color:var(--ra-dim); }
+body.ra-ui .pk-time b, body.ra-ui .pk-result b{ color:var(--ra-chalk); }
+body.ra-ui .pk-btn{
+  position:relative; overflow:hidden; isolation:isolate; border:0; border-radius:0; background:var(--ra-surface-3);
+  box-shadow:inset 0 0 0 1px var(--ra-line); font-family:var(--ra-font); font-stretch:115%; font-weight:800;
+  transition:color .3s ease, box-shadow .2s ease;
+}
+body.ra-ui .pk-btn::before{
+  content:""; position:absolute; inset:0; z-index:-1; background:#343a40;
+  transform:scaleX(0); transform-origin:left; transition:transform .35s cubic-bezier(.7,0,.2,1);
+}
+body.ra-ui .pk-btn:hover:not(:disabled)::before{ transform:scaleX(1); }
+body.ra-ui .pk-btn:hover:not(:disabled){ border-color:transparent; }
+body.ra-ui .pk-btn small{ font-family:var(--ra-font); color:var(--ra-dim); }
+body.ra-ui .pk-btn.on{ background:var(--ra-accent); color:var(--ra-accent-ink); box-shadow:none; }
+body.ra-ui .pk-btn.on small{ color:var(--ra-accent-ink); }
+body.ra-ui .pk-btn.on.right{ background:var(--win); color:#04120c; }
+body.ra-ui .pk-btn.on.wrong{ background:var(--ra-danger); color:#fff; }
+body.ra-ui .pk-btn.answer:not(.on){ box-shadow:inset 0 0 0 1px var(--win); }
+body.ra-ui .pk-result .wrong{ color:var(--ra-danger); }
+
+/* Posiciones */
+body.ra-ui table.standings th{ font-family:var(--ra-font); font-stretch:115%; font-weight:800; letter-spacing:.06em; font-size:10.5px; color:var(--ra-dim); border-bottom-color:var(--ra-line-2); }
+body.ra-ui table.standings td{ font-family:var(--ra-font); border-bottom-color:var(--ra-line); }
+body.ra-ui table.standings td.pos{ font-stretch:110%; }
+body.ra-ui table.standings td.pts{ color:var(--ra-accent); font-stretch:110%; }
+body.ra-ui table.standings tr.me td{ background:rgba(200,243,29,0.08); }
+body.ra-ui table.standings tr.me td.pos{ box-shadow:inset 3px 0 0 var(--ra-accent); }

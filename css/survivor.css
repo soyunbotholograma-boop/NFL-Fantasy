@@ -504,3 +504,187 @@
     .score-row{ grid-template-columns:1fr 56px 14px 56px 1fr; }
     .sr-meta, .sr-state{ grid-column:1 / -1; text-align:left; }
   }
+
+/* ====== Interfaz RA (tema de la portada) ====== */
+  /* ====== Interfaz RA — mismo tema que la portada (index.html): carbón + lima ======
+     Sólo cambia los controles. El póster, la tabla, las tarjetas y el canvas que se
+     exportan conservan su diseño y sus fuentes. */
+  body.ra-ui{
+    --ra-ink:#0b0d0f; --ra-surface:#15181b; --ra-surface-2:#1d2125; --ra-surface-3:#272c31; --ra-field:#0f1214;
+    --ra-line:rgba(255,255,255,0.07); --ra-line-2:rgba(255,255,255,0.13);
+    --ra-chalk:#eef0f1; --ra-dim:#9aa1a8; --ra-faint:#646c74;
+    --ra-accent:#c8f31d; --ra-accent-ink:#101400; --ra-danger:#ff5a4e;
+    --ra-stripes:repeating-linear-gradient(135deg, rgba(255,255,255,0.022) 0 2px, transparent 2px 10px);
+    --ra-font:'Saira', system-ui, sans-serif;
+    background:var(--ra-ink); isolation:isolate;
+  }
+  /* Resplandor lima arriba y filo lima a la izquierda */
+  body.ra-ui::before{
+    content:""; position:fixed; inset:0 0 auto 0; height:320px; z-index:-1; pointer-events:none; clip-path:none; opacity:1;
+    background:radial-gradient(ellipse 70% 100% at 50% 0%, rgba(200,243,29,0.16) 0%, rgba(200,243,29,0) 70%);
+  }
+  body.ra-ui::after{
+    content:""; position:fixed; left:0; top:0; bottom:0; width:5px; z-index:-1; pointer-events:none;
+    background:linear-gradient(180deg, #c8f31d 0%, rgba(200,243,29,0.25) 60%, rgba(200,243,29,0) 100%);
+  }
+  body.ra-ui ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.14); border-radius:0; }
+  body.ra-ui ::-webkit-scrollbar-track{ background:transparent; }
+
+  body.ra-ui .back-home, body.ra-ui .back{
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+    font-family:var(--ra-font); font-stretch:115%; font-weight:800; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ra-chalk); background:var(--ra-surface-3); border:0; border-radius:0;
+    padding:8px 14px; transition:background-color .2s ease, color .2s ease;
+  }
+  body.ra-ui .back-home:hover, body.ra-ui .back:hover{ background:var(--ra-accent); color:var(--ra-accent-ink); border-color:transparent; }
+
+  /* Título en dos pesos: renglón ligero arriba, palabra ancha y pesada abajo */
+  .ra-lite{
+    display:block; font-family:'Saira', system-ui, sans-serif; font-stretch:100%; font-weight:500; font-style:normal;
+    text-transform:none; letter-spacing:0; font-size:.52em; line-height:1.15; color:#9aa1a8; margin-bottom:.15em;
+  }
+  /* Viñeta lima tipo bandera */
+  .ra-mk::before{
+    content:""; display:inline-block; width:11px; height:8px; margin-right:7px; vertical-align:.05em; background:#c8f31d;
+    clip-path:polygon(0 0, 62% 0, 100% 50%, 62% 100%, 0 100%);
+  }
+
+  /* Botones rectangulares; un relleno barre de izquierda a derecha al pasar el mouse */
+  body.ra-ui .btn{
+    position:relative; isolation:isolate; overflow:hidden; border:0; border-radius:0;
+    font-family:var(--ra-font); font-stretch:115%; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    background:var(--ra-accent); color:var(--ra-accent-ink); filter:none;
+    transition:color .3s ease, transform .12s ease, opacity .2s ease;
+    --ra-sweep:#ffffff; --ra-sweep-ink:#111;
+  }
+  body.ra-ui .btn::before{
+    content:""; position:absolute; inset:0; z-index:-1; background:var(--ra-sweep);
+    transform:scaleX(0); transform-origin:left; transition:transform .38s cubic-bezier(.7,0,.2,1);
+  }
+  body.ra-ui .btn:hover:not(:disabled){ color:var(--ra-sweep-ink); filter:none; }
+  body.ra-ui .btn:hover:not(:disabled)::before{ transform:scaleX(1); }
+  body.ra-ui .btn:active:not(:disabled){ transform:scale(.98); }
+  body.ra-ui .btn:focus-visible{ outline:2px solid var(--ra-accent); outline-offset:2px; }
+  body.ra-ui .btn:disabled{ opacity:.35; }
+
+  .ra-curtain{ position:fixed; inset:0; z-index:9999; background:#0b0d0f; transform:scaleX(0); transform-origin:left; pointer-events:none; }
+  .ra-curtain::after{ content:""; position:absolute; top:0; bottom:0; right:-5px; width:5px; background:#c8f31d; }
+
+  body.ra-ui .back-home-bar{ margin-bottom:22px; }
+
+  /* Encabezado */
+  body.ra-ui .hero{ border-bottom:1px solid var(--ra-line); padding-bottom:24px; margin-bottom:0; }
+  body.ra-ui .hero .league-tag{
+    font-family:var(--ra-font); font-stretch:115%; font-style:normal; font-weight:800; letter-spacing:.06em; font-size:11px;
+    background:var(--ra-accent); color:var(--ra-accent-ink); clip-path:none; border-radius:0; padding:5px 12px; margin-bottom:12px;
+  }
+  body.ra-ui .hero .eyebrow{
+    font-family:var(--ra-font); font-weight:500; letter-spacing:0; text-transform:none;
+    font-size:15px; color:var(--ra-dim); margin-bottom:4px;
+  }
+  body.ra-ui .hero h1{
+    font-family:var(--ra-font); font-stretch:125%; font-weight:900; transform:none; filter:none;
+    font-size:clamp(38px,5.6vw,68px); line-height:.92; letter-spacing:0;
+  }
+  body.ra-ui .hero h1 .t2{
+    background:none; -webkit-background-clip:border-box; background-clip:border-box; color:var(--ra-accent);
+  }
+  body.ra-ui .league-logo{ border-radius:0; background:var(--ra-surface-2); border:1px solid var(--ra-line); }
+  body.ra-ui .league-logo-empty{ border-radius:0; border-color:rgba(255,255,255,0.2); background:var(--ra-surface-2); font-family:var(--ra-font); }
+  body.ra-ui .league-logo-empty:hover{ color:var(--ra-chalk); border-color:var(--ra-accent); }
+  body.ra-ui .league-logo-remove{ border-radius:0; }
+  body.ra-ui .save-status{ font-family:var(--ra-font); letter-spacing:0; }
+
+  /* Marcador como fichas de estadística */
+  body.ra-ui .scoreboard{ gap:4px; }
+  body.ra-ui .score-item{ min-width:104px; padding:16px 14px 12px; text-align:left; background:var(--ra-surface-2); }
+  body.ra-ui .score-item .num{ font-family:var(--ra-font); font-stretch:110%; font-weight:700; font-size:34px; line-height:1; color:var(--ra-chalk); }
+  body.ra-ui .score-item .lbl{ font-family:var(--ra-font); font-weight:500; letter-spacing:0; text-transform:none; font-size:12px; color:var(--ra-dim); margin-top:6px; }
+  body.ra-ui .score-item .lbl::before{
+    content:""; display:inline-block; width:10px; height:7px; margin-right:6px; background:var(--ra-accent);
+    clip-path:polygon(0 0, 62% 0, 100% 50%, 62% 100%, 0 100%);
+  }
+  body.ra-ui .score-item.alive .num{ color:var(--ra-accent); }
+  body.ra-ui .score-item.out .num{ color:var(--ra-danger); }
+
+  /* Pestañas como la barra de navegación de la referencia: texto + subrayado lima que se desliza */
+  body.ra-ui .tabs{
+    position:relative; gap:26px; padding:0; margin:0 0 22px; background:none; border:0; border-bottom:1px solid var(--ra-line);
+  }
+  body.ra-ui .tab-btn{
+    background:transparent; border:0; border-radius:0; padding:18px 0 13px;
+    font-family:var(--ra-font); font-weight:500; font-size:13px; letter-spacing:0; text-transform:none; color:var(--ra-faint);
+    transition:color .25s ease;
+  }
+  body.ra-ui .tab-btn:hover{ color:var(--ra-chalk); background:transparent; }
+  body.ra-ui .tab-btn.active{ color:var(--ra-chalk); background:transparent; box-shadow:inset 0 -2px 0 var(--ra-accent); }
+  body.ra-ui .tabs.has-ink .tab-btn.active{ box-shadow:none; }
+  .ra-tab-ink{ position:absolute; left:0; top:0; height:2px; background:#c8f31d; pointer-events:none; }
+
+  body.ra-ui .panel{ background:var(--ra-surface) var(--ra-stripes); border:1px solid var(--ra-line); border-radius:0; padding:22px; }
+  body.ra-ui select, body.ra-ui input[type=text], body.ra-ui input[type=number]{
+    font-family:var(--ra-font); font-size:13px; color:var(--ra-chalk);
+    background:var(--ra-field); border:1px solid var(--ra-line-2); border-radius:0; padding:8px 11px;
+    transition:border-color .2s ease;
+  }
+  body.ra-ui select:focus, body.ra-ui input:focus{ outline:none; border-color:var(--ra-accent); }
+  body.ra-ui .btn.ghost, body.ra-ui label.btn{
+    background:var(--ra-surface-3); color:var(--ra-chalk); border:0; border-radius:0;
+    font-family:var(--ra-font); font-stretch:115%; font-weight:800; --ra-sweep:#343a40; --ra-sweep-ink:var(--ra-chalk);
+  }
+  body.ra-ui .btn.ghost:hover, body.ra-ui label.btn:hover{ color:var(--ra-chalk); }
+  body.ra-ui .btn.danger{
+    background:transparent; color:var(--ra-danger); box-shadow:inset 0 0 0 1px rgba(255,90,78,0.5);
+    --ra-sweep:var(--ra-danger); --ra-sweep-ink:#fff;
+  }
+
+  body.ra-ui table.list th{ font-family:var(--ra-font); font-stretch:115%; font-weight:800; letter-spacing:.06em; font-size:10.5px; color:var(--ra-dim); border-bottom:1px solid var(--ra-line-2); }
+  body.ra-ui table.list td{ font-family:var(--ra-font); border-bottom-color:var(--ra-line); }
+  body.ra-ui table.list tr:hover td{ background:rgba(255,255,255,0.03); }
+  body.ra-ui .pick-card{ background:var(--ra-surface-3) var(--ra-stripes); border:0; border-radius:0; padding:14px; }
+  body.ra-ui .pick-card .pname{ font-family:var(--ra-font); font-stretch:120%; font-weight:800; font-size:13px; text-transform:uppercase; }
+  body.ra-ui .team-chip{ border-radius:0; background:var(--ra-surface-3); border:1px solid transparent; padding:8px 10px; font-family:var(--ra-font); }
+  body.ra-ui .team-chip.checked{ border-color:var(--loss); background:var(--loss-dim); }
+  body.ra-ui .logo-tile, body.ra-ui .game-card{ background:var(--ra-surface-3); border:0; border-radius:0; }
+  body.ra-ui .empty-note{ font-family:var(--ra-font); font-style:normal; }
+  body.ra-ui .switch-row{ font-family:var(--ra-font); }
+  body.ra-ui .switch-row input{ accent-color:var(--ra-accent); }
+  body.ra-ui .storage-note{ font-family:var(--ra-font); }
+  body.ra-ui .storage-note b{ color:var(--ra-accent); }
+  /* Barra de sesion y publicar (solo en la version con cuentas) */
+  body.ra-ui .session-user{ font-family:var(--ra-font); color:var(--ra-dim); }
+  body.ra-ui .session-user b{ color:var(--ra-chalk); }
+  body.ra-ui .sync-dot.live{ background:var(--ra-accent); box-shadow:0 0 0 3px rgba(200,243,29,0.2); }
+  body.ra-ui .not-admin{ font-family:var(--ra-font); }
+  body.ra-ui .not-admin .league-tag{
+    font-family:var(--ra-font); font-stretch:115%; font-style:normal; font-weight:800; letter-spacing:.06em; font-size:11px;
+    background:var(--ra-accent); color:var(--ra-accent-ink); clip-path:none; border-radius:0; padding:5px 12px;
+  }
+
+  /* Login (js/supa.js) con el tema RA */
+  body.ra-ui .auth-gate{ background:var(--ra-ink) var(--ra-stripes); }
+  body.ra-ui .auth-gate::before{
+    content:""; position:absolute; inset:0 0 auto 0; height:320px; pointer-events:none;
+    background:radial-gradient(ellipse 70% 100% at 50% 0%, rgba(200,243,29,0.16) 0%, rgba(200,243,29,0) 70%);
+  }
+  body.ra-ui .auth-box{
+    position:relative; background:var(--ra-surface) var(--ra-stripes); border:1px solid var(--ra-line); border-radius:0;
+    box-shadow:0 24px 60px rgba(0,0,0,0.55); font-family:var(--ra-font);
+  }
+  body.ra-ui .auth-box::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--ra-accent); }
+  body.ra-ui .auth-box .league-tag{
+    font-family:var(--ra-font); font-stretch:115%; font-style:normal; font-weight:800; letter-spacing:.06em; font-size:11px;
+    background:var(--ra-accent); color:var(--ra-accent-ink); clip-path:none; border-radius:0; padding:5px 12px;
+  }
+  body.ra-ui .auth-title{ font-family:var(--ra-font); font-stretch:125%; font-weight:900; font-size:28px; letter-spacing:0; }
+  body.ra-ui .auth-sub{ color:var(--ra-dim); }
+  body.ra-ui .auth-fields label{ font-family:var(--ra-font); font-stretch:115%; font-weight:800; letter-spacing:.08em; font-size:10.5px; color:var(--ra-dim); }
+  body.ra-ui .auth-fields input{
+    font-family:var(--ra-font); background:var(--ra-field); border:1px solid var(--ra-line-2); border-radius:0; color:var(--ra-chalk);
+    transition:border-color .2s ease;
+  }
+  body.ra-ui .auth-fields input:focus{ border-color:var(--ra-accent); }
+  body.ra-ui .auth-link{ font-family:var(--ra-font); color:var(--ra-faint); text-decoration:none; }
+  body.ra-ui .auth-link:hover{ color:var(--ra-accent); }
+  body.ra-ui .auth-msg{ color:var(--ra-accent); }
+  body.ra-ui .auth-msg.err{ color:var(--ra-danger); }
