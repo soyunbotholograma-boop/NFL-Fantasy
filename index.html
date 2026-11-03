@@ -80,6 +80,7 @@
     content:""; position:absolute; left:12px; right:12px; top:0; height:3px; background:var(--lime);
     transform:scaleX(0); transition:transform .3s cubic-bezier(.7,0,.2,1);
   }
+  .nav a{white-space:nowrap;}
   .nav a:hover, .nav a.is-current{color:var(--text);}
   .nav a:hover::after, .nav a.is-current::after{transform:scaleX(1);}
   .season-pill{
@@ -202,6 +203,38 @@
   .btn--lime{background:var(--lime);}
   .btn--lime::before{background:#fff;}
 
+  /* ───────── Vista: clásica (Excel) o portal de jugadores (vista previa) ─────────
+     Sólo cambia qué se muestra en la portada; los resultados siguen saliendo de las herramientas actuales. */
+  body:not(.mode-portal) .only-portal{display:none !important;}
+  body.mode-portal .only-classic{display:none !important;}
+  .view-switch{
+    align-self:center; display:inline-flex; align-items:center; gap:10px; margin-right:14px; cursor:pointer; user-select:none;
+    font-stretch:115%; font-weight:700; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); white-space:nowrap;
+  }
+  .view-switch input{position:absolute; opacity:0; width:1px; height:1px;}
+  /* Interruptor rectangular: la ficha se desliza y el riel se llena de lima (patrón uiverse) */
+  .view-switch__track{
+    position:relative; width:46px; height:24px; background:var(--surface-3); box-shadow:inset 0 0 0 1px var(--line);
+    transition:background-color .3s ease;
+  }
+  .view-switch__track::before{
+    content:""; position:absolute; inset:0; background:var(--lime); transform:scaleX(0); transform-origin:left;
+    transition:transform .35s cubic-bezier(.7,0,.2,1);
+  }
+  .view-switch__track::after{
+    content:""; position:absolute; top:4px; left:4px; width:16px; height:16px; background:var(--text);
+    transition:transform .35s cubic-bezier(.7,0,.2,1), background-color .3s ease;
+  }
+  .view-switch input:checked + .view-switch__track::before{transform:scaleX(1);}
+  .view-switch input:checked + .view-switch__track::after{transform:translateX(22px); background:var(--lime-ink);}
+  .view-switch input:focus-visible + .view-switch__track{outline:2px solid var(--lime); outline-offset:2px;}
+  .view-switch b{color:var(--text); font-weight:800;}
+  .preview-flag{
+    display:inline-block; margin-left:6px; padding:1px 5px; vertical-align:2px;
+    font-size:9px; font-weight:800; letter-spacing:.08em; background:var(--lime); color:var(--lime-ink); font-stretch:115%;
+  }
+  .tools--portal{grid-template-columns:repeat(4,1fr);}
+
   /* ───────── Pantalla de carga ───────── */
   .loader{
     position:fixed; inset:0; z-index:50; display:grid; place-items:center;
@@ -219,10 +252,16 @@
   .loader__tip b{color:var(--text); font-weight:600;}
   .loader.is-gone{display:none;}
 
+  @media (max-width:1180px){
+    .role{display:none;}
+    .view-switch > span:first-child{display:none;}
+    .nav a{padding:0 10px;}
+    .nav a svg{display:none;}
+  }
   @media (max-width:1020px){
     .overview{grid-template-columns:1fr 1fr;}
     .overview > :last-child{grid-column:1 / -1;}
-    .tools{grid-template-columns:1fr 1fr;}
+    .tools, .tools--portal{grid-template-columns:1fr 1fr;}
   }
   @media (max-width:760px){
     .topbar{flex-wrap:wrap;}
@@ -231,7 +270,8 @@
     .nav a{padding:0 12px;}
     .season-pill{margin-left:auto;}
     .subnav{gap:16px; flex-wrap:wrap;}
-    .overview, .tools{grid-template-columns:1fr;}
+    .overview, .tools, .tools--portal{grid-template-columns:1fr;}
+    .view-switch span:not(.view-switch__track){display:none;}
   }
   @media (max-width:420px){ .brand__name span{display:none;} .tile__num{font-size:24px;} }
 </style>
@@ -260,6 +300,8 @@
       <nav class="nav" aria-label="Herramientas">
         <a class="is-current" href="index.html">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>Inicio</a>
+        <a class="only-portal" href="portal.html">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 12c5 0 9 2.5 9 6v2H3v-2c0-3.5 4-6 9-6z"/></svg>Mi Portal</a>
         <a href="fantasy_standings.html">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v3h4v3a5 5 0 0 1-5 5h-.3A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1A5 5 0 0 1 8.3 14H8a5 5 0 0 1-5-5V6h4zm10 5v4a3 3 0 0 0 2-3V8zM5 8v1a3 3 0 0 0 2 3V8z"/></svg>Standings</a>
         <a href="survivor-league_new.html">
@@ -267,9 +309,15 @@
         <a href="race.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 17l6-6 4 4 8-8"/></svg>Carrera</a>
       </nav>
+      <label class="view-switch" title="Muestra cómo se verá la liga con el portal de jugadores. Los resultados siguen saliendo de las herramientas actuales.">
+        <span>Vista portal</span>
+        <input type="checkbox" id="viewSwitch">
+        <span class="view-switch__track" aria-hidden="true"></span>
+      </label>
       <span class="season-pill">Temporada 2026</span>
     </header>
     <div class="subnav">
+      <a class="only-portal" href="portal.html">Mis picks <span class="preview-flag">Vista previa</span></a>
       <a href="fantasy_standings.html">Póster de posiciones</a>
       <a href="survivor-league_new.html">Tabla del survivor</a>
       <a href="race.html">Video de la carrera</a>
@@ -296,7 +344,9 @@
               <div class="tile__lbl mk">Eliminados</div>
             </div>
           </div>
-          <a class="btn wide-btn" href="survivor-league_new.html">Ver tabla del survivor
+          <a class="btn wide-btn only-classic" href="survivor-league_new.html">Ver tabla del survivor
+            <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 1l4 4-4 4"/></svg></a>
+          <a class="btn wide-btn only-portal" href="portal.html">Hacer mis picks
             <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 1l4 4-4 4"/></svg></a>
           <div class="meta" id="metaLine">Los datos se leen de lo que guardaron las herramientas en este navegador.</div>
         </div>
@@ -312,6 +362,8 @@
           <div class="segs-legend"><span>Semana 1</span><span id="lvlLeft">Semana 18</span></div>
           <div class="block-head mk" style="margin-top:22px;">Herramientas</div>
           <div class="badges">
+            <a class="hex only-portal" href="portal.html" title="Mi Portal (vista previa)">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 12c5 0 9 2.5 9 6v2H3v-2c0-3.5 4-6 9-6z"/></svg></a>
             <a class="hex" href="fantasy_standings.html" title="Fantasy Standings">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v3h4v3a5 5 0 0 1-5 5h-.3A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1A5 5 0 0 1 8.3 14H8a5 5 0 0 1-5-5V6h4z"/></svg></a>
             <a class="hex" href="survivor-league_new.html" title="Survivor League">
@@ -335,7 +387,12 @@
               </div>
             </div>
           </div>
-          <div class="next">
+          <div class="next only-portal">
+            <div class="next__row"><span class="mk">Siguiente paso</span><a href="portal.html">Abrir</a></div>
+            <div class="next__title wide">Tus picks de la semana</div>
+            <div class="next__meta"><span>Survivor + Pick'em</span><span>Vista previa</span></div>
+          </div>
+          <div class="next only-classic">
             <div class="next__row"><span class="mk">Siguiente paso</span><a href="fantasy_standings.html">Abrir</a></div>
             <div class="next__title wide" id="nextTitle">Póster de la semana</div>
             <div class="next__meta"><span>Google Sheet → PNG</span><span id="nextWeek"></span></div>
@@ -349,7 +406,16 @@
         <span class="tabs__ink" id="tabsInk"></span>
       </div>
 
-      <section class="tools">
+      <section class="tools" id="toolsGrid">
+        <a class="tool tool--featured only-portal" href="portal.html">
+          <div class="tool__flag">Vista previa</div>
+          <h2 class="tool__title wide">Mi Portal</h2>
+          <div class="tool__place"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 0a4 4 0 0 0-4 4c0 3 4 8 4 8s4-5 4-8a4 4 0 0 0-4-4zm0 5.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>Login de prueba</div>
+          <div class="chips"><span>Survivor</span><span>Pick'em</span><span>Elo</span></div>
+          <div class="tool__line mk">Así verán los jugadores sus picks y tablas</div>
+          <div class="tool__foot"><span>Entra como cualquier jugador</span>
+            <span class="btn btn--lime">Probar <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 1l4 4-4 4"/></svg></span></div>
+        </a>
         <a class="tool" href="fantasy_standings.html">
           <h2 class="tool__title wide">Fantasy Standings</h2>
           <div class="tool__place"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 0a4 4 0 0 0-4 4c0 3 4 8 4 8s4-5 4-8a4 4 0 0 0-4-4zm0 5.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>Desde tu Google Sheet</div>
@@ -391,6 +457,23 @@
   ];
   var $ = function(id){ return document.getElementById(id); };
   function read(key){ try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch(e){ return null; } }
+
+  // ───── Vista portal (vista previa) o clásica; se recuerda en este navegador ─────
+  var VIEW_KEY = 'ra-view-mode';
+  function setView(portal){
+    document.body.classList.toggle('mode-portal', portal);
+    $('toolsGrid').classList.toggle('tools--portal', portal);
+    $('viewSwitch').checked = portal;
+  }
+  setView(read(VIEW_KEY) === 'portal');
+  $('viewSwitch').addEventListener('change', function(e){
+    try { localStorage.setItem(VIEW_KEY, JSON.stringify(e.target.checked ? 'portal' : 'classic')); } catch(err){}
+    setView(e.target.checked);
+    if (window.gsap && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      gsap.fromTo('.tool:not([style*="display: none"]), .only-portal', {y:16, opacity:0},
+        {y:0, opacity:1, duration:.5, stagger:.05, ease:'expo.out', clearProps:'transform,opacity', overwrite:true});
+    }
+  });
 
   // ───── Datos reales guardados por las herramientas ─────
   var fantasy = read('fantasy-poster-core') || {};
