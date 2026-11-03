@@ -40,15 +40,21 @@
 
   <div id="portalMain">
     <div class="tabs">
-      <button class="tab-btn active" data-tab="survivor">Survivor</button>
+      <button class="tab-btn active" data-tab="resumen">Resumen</button>
+      <button class="tab-btn" data-tab="survivor">Survivor</button>
       <button class="tab-btn" data-tab="pickem">Pick'em</button>
       <button class="tab-btn" data-tab="posiciones">Posiciones</button>
       <button class="tab-btn" data-tab="tabla">Survivor Tabla</button>
       <button class="tab-btn" data-tab="carrera">Mi Carrera</button>
     </div>
 
+    <!-- RESUMEN -->
+    <div class="tab-content active" id="tab-resumen">
+      <div class="panel dash" id="dash"></div>
+    </div>
+
     <!-- SURVIVOR -->
-    <div class="tab-content active" id="tab-survivor">
+    <div class="tab-content" id="tab-survivor">
       <div class="panel">
         <div class="toolbar">
           <div class="group">
@@ -126,6 +132,7 @@
 <script src="js/league-core.js"></script>
 <script src="js/preview-backend.js"></script>
 <script src="js/ra-motion.js"></script>
+<div class="dash-tip" id="dashTip" role="tooltip" hidden></div>
 <script>
 /* =====================================================================
    MI PORTAL
@@ -364,6 +371,16 @@ async function savePickem(gameId, choice){
 }
 document.getElementById('pkWeek').addEventListener('change', ()=>{ flash('pkFlash', ''); renderPickem(); });
 
+/* ---------------- PICK'EM GENERAL ----------------
+   Los jugadores del pick'em: los que trae la publicacion (si los trae) o los del survivor. */
+function pickemPlayers(){ return (pub && pub.snapshot.pickem.players) || state.players; }
+function normName(s){ return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase(); }
+function myPickemPlayer(){
+  if(!me) return null;
+  const list = pickemPlayers();
+  return list.find(p=> p.id === me.id) || list.find(p=> normName(p.name) === normName(me.name)) || null;
+}
+
 /* ---------------- POSICIONES ---------------- */
 function renderStandings(){
   const table = document.getElementById('standingsTable');
@@ -373,11 +390,11 @@ function renderStandings(){
     return;
   }
   const { weekly, elo } = pub.snapshot.pickem;
-  const res = pickemStandings(state.players, weekly, elo, sel.value);
+  const res = pickemStandings(pickemPlayers(), weekly, elo, sel.value);
   const mv = (n)=> n > 0 ? `<span class="mv up">▲${n}</span>` : n < 0 ? `<span class="mv down">▼${-n}</span>` : '<span class="mv same">—</span>';
   const signed = (n)=> (n > 0 ? '+' : '') + n;
   table.innerHTML = `<thead><tr><th>#</th><th></th><th class="l">Jugador</th><th>${escapeHtml(WEEK_LABEL[res.weekKey] || '')}</th><th>Total</th><th>Elo</th><th>Cambio</th></tr></thead><tbody>`
-    + res.rows.map(r=>`<tr class="${me && r.player.id===me.id ? 'me' : ''}">
+    + res.rows.map(r=>`<tr class="${myPickemPlayer() && r.player.id===myPickemPlayer().id ? 'me' : ''}">
         <td class="pos">${r.pos}</td><td>${mv(r.move)}</td>
         <td class="l nm">${escapeHtml(r.player.name)}</td>
         <td>${r.week}</td><td class="pts">${r.total}</td>
@@ -404,20 +421,259 @@ function renderGeneralTable(){
 /* race.html?me=Nombre: la misma animacion de la carrera, con tu linea resaltada */
 function renderRace(){
   const frame = document.getElementById('raceFrame');
-  const src = 'race.html?me=' + encodeURIComponent(me.name);
+  const mine = myPickemPlayer();
+  const src = 'race.html?me=' + encodeURIComponent(mine ? mine.name : me.name);
   if(frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+  else sendRaceData();
+}
+/* Acumulado de puntos del pick'em general por semana, con la posicion final para desempatar */
+function sendRaceData(){
+  const frame = document.getElementById('raceFrame');
+  if(!frame.contentWindow || !pub) return;
+  const { weekly, elo } = pub.snapshot.pickem;
+  const players = pickemPlayers();
+  const weeks = WEEKS.filter(w=> weekly[w.key]);
+  if(!weeks.length) return;
+  const rows = [['Jugadores', ...weeks.map(w=> w.label)]];
+  players.forEach(p=>{
+    let acc = 0;
+    rows.push([p.name, ...weeks.map(w=> acc += (weekly[w.key][p.id] || 0))]);
+  });
+  // Posicion de cada semana igual que en la tabla del pick'em (empates por Elo)
+  const ranks = Object.fromEntries(players.map(p=> [p.name, []]));
+  let final = null;
+  weeks.forEach(w=>{
+    final = pickemStandings(players, weekly, elo, w.key);
+    final.rows.forEach(r=> ranks[r.player.name].push(r.pos));
+  });
+  frame.contentWindow.postMessage({ type: 'race-data', rows, ranks, pos: final.rows.map(r=> [r.player.name, r.pos]) }, location.origin);
 }
 window.addEventListener('message', e=>{
-  if(e.origin !== location.origin || !e.data || e.data.type !== 'race-height') return;
-  document.getElementById('raceFrame').style.height = e.data.h + 'px';
+  if(e.origin !== location.origin || !e.data) return;
+  if(e.data.type === 'race-height') document.getElementById('raceFrame').style.height = e.data.h + 'px';
+  if(e.data.type === 'race-ready') sendRaceData();
 });
 
+/* ---------------- RESUMEN (dashboard) ---------------- */
+const fmt1 = n=> (Math.round(n * 10) / 10).toLocaleString('es-MX');
+function ord(n){ return n + 'º'; }
+function teamChip(abbr, extra){
+  const logo = state.teamLogos[abbr];
+  const t = TEAM_MAP[abbr] || { c1: '#333' };
+  const mark = logo ? `<img src="${escapeHtml(logo)}" alt="">` : `<i style="background:${t.c1}">${escapeHtml(abbr)}</i>`;
+  return `<span class="dash-team">${mark}<b>${escapeHtml(abbr)}</b>${extra || ''}</span>`;
+}
+
+/* Todo lo que se calcula del pick'em general para una persona */
+function pickemAnalysis(pkMe){
+  const pk = pub && pub.snapshot.pickem;
+  if(!pk || !pkMe) return null;
+  const players = pickemPlayers();
+  const weeks = WEEKS.filter(w=> pk.weekly[w.key]);
+  if(!weeks.length) return null;
+  const rows = weeks.map(w=>{
+    const all = players.map(p=> pk.weekly[w.key][p.id] || 0);
+    const mine = pk.weekly[w.key][pkMe.id] || 0;
+    const st = pickemStandings(players, pk.weekly, pk.elo, w.key);
+    const r = st.rows.find(x=> x.player.id === pkMe.id);
+    return { wk: w, pts: mine, avg: all.reduce((a,b)=>a+b, 0) / all.length, max: Math.max(...all), min: Math.min(...all),
+             pos: r.pos, total: r.total, elo: r.elo, eloChange: r.eloChange, leader: st.rows[0], table: st.rows };
+  });
+  const pts = rows.map(r=> r.pts);
+  const n = pts.length, total = pts.reduce((a,b)=>a+b, 0), avg = total / n;
+  const variance = pts.reduce((a,b)=> a + (b - avg) ** 2, 0) / n;
+  // Tendencia: promedio de las ultimas 3 semanas contra el de toda la temporada
+  const last3 = pts.slice(-3), last3Avg = last3.reduce((a,b)=>a+b, 0) / last3.length;
+  const byPts = rows.slice().sort((a,b)=> b.pts - a.pts || WEEK_INDEX[b.wk.key] - WEEK_INDEX[a.wk.key]);
+  const byPos = rows.slice().sort((a,b)=> a.pos - b.pos || WEEK_INDEX[b.wk.key] - WEEK_INDEX[a.wk.key]);
+  const last = rows[n-1], prev = n > 1 ? rows[n-2] : null;
+  const meIdx = last.table.findIndex(x=> x.player.id === pkMe.id);
+  const above = meIdx > 0 ? last.table[meIdx - 1] : null;
+  return {
+    rows, n, players: players.length, total, avg, variance, sd: Math.sqrt(variance), last3Avg,
+    best: byPts.slice(0, 3), worst: byPts.slice(-3).reverse(),
+    bestPos: byPos[0], worstPos: byPos[byPos.length - 1],
+    mvp: rows.filter(r=> r.pts === r.max), salado: rows.filter(r=> r.pts === r.min),
+    aboveAvg: rows.filter(r=> r.pts > r.avg).length,
+    last, prev, gapLeader: last.leader.total - last.total, gapAbove: above ? above.total - last.total : 0, above
+  };
+}
+
+/* Analisis del survivor con los resultados publicados y el record real de cada equipo */
+function survivorAnalysis(){
+  const tl = playerTimeline(me);
+  const start = me.startingLives ?? state.startingLivesDefault;
+  const records = teamRecords(games);
+  const used = usedTeams(me);
+  const weeks = WEEKS.filter(w=> me.picks[w.key]);
+  const status = weeks.map(w=> ({ wk: w, team: me.picks[w.key], st: weekStatus(me, w.key, tl), opp: opponentOf(w.key, me.picks[w.key]) }));
+  const strongLeft = TEAMS.filter(t=> !used.has(t.abbr) && records[t.abbr].w > records[t.abbr].l)
+    .sort((a,b)=> records[b.abbr].pct - records[a.abbr].pct || records[b.abbr].w - records[a.abbr].w);
+  const strongUsed = TEAMS.filter(t=> used.has(t.abbr) && records[t.abbr].w > records[t.abbr].l).length;
+  // Picks contra rivales debiles: el rival llegaba con record perdedor (menos de .400, al menos 2 partidos)
+  const weak = status.filter(s=>{
+    if(!s.opp) return false;
+    const r = teamRecords(games, s.wk.key)[s.opp];
+    s.oppRec = r;
+    return r.w + r.l + r.t >= 2 && r.pct < 0.4;
+  });
+  const against = [...againstCounts(me).entries()].map(([abbr, count])=> ({ abbr, count, rec: records[abbr] }))
+    .sort((a,b)=> b.count - a.count || (a.rec.pct ?? 1) - (b.rec.pct ?? 1));
+  const cur = currentWeekKey(games);
+  return {
+    lives: tl.lives, start, missed: tl.missed.size,
+    won: status.filter(s=> s.st === 'won').length, lost: status.filter(s=> s.st === 'lost').length,
+    pending: status.filter(s=> s.st === 'pending').length,
+    strongLeft, strongUsed, weak, against, records,
+    againstLosing: against.filter(a=> a.rec.pct !== null && a.rec.pct < 0.5).reduce((s, a)=> s + a.count, 0),
+    curWeek: cur, curPick: me.picks[cur] || null
+  };
+}
+
+function barChart(a){
+  const W = 640, H = 210, pl = 30, pr = 8, pt = 22, pb = 26;
+  const top = Math.max(2, Math.ceil(Math.max(...a.rows.map(r=> Math.max(r.pts, r.max))) / 2) * 2);
+  const y = v=> pt + (H - pt - pb) * (1 - v / top);
+  const slot = (W - pl - pr) / a.rows.length, bw = Math.min(34, slot * 0.56);
+  const ticks = [0, Math.round(top / 2), top];
+  let g = ticks.map(t=> `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${pl - 8}" y="${y(t) + 4}" text-anchor="end">${t}</text>`).join('');
+  const avgPts = a.rows.map((r, i)=> `${pl + slot * (i + .5)},${y(r.avg)}`).join(' ');
+  a.rows.forEach((r, i)=>{
+    const cx = pl + slot * (i + .5), x = cx - bw / 2, yy = y(r.pts), h = Math.max(0, y(0) - yy), rad = Math.min(4, h);
+    const tag = r.pts === r.max ? 'MVP' : r.pts === r.min ? 'SALADO' : '';
+    g += `<path class="bar${r.pts > r.avg ? '' : ' low'}" d="M${x},${y(0)} V${yy + rad} Q${x},${yy} ${x + rad},${yy} H${x + bw - rad} Q${x + bw},${yy} ${x + bw},${yy + rad} V${y(0)} Z"/>`;
+    if(tag) g += `<text class="tag${tag === 'MVP' ? ' mvp' : ''}" x="${cx}" y="${yy - 7}" text-anchor="middle">${tag}</text>`;
+    g += `<text class="ax" x="${cx}" y="${H - 8}" text-anchor="middle">${r.wk.key.replace('WK', '')}</text>`;
+    g += `<rect class="hit" x="${pl + slot * i}" y="${pt}" width="${slot}" height="${H - pt - pb}" data-tip="<b>${r.wk.label}</b><br>${r.pts} pts · promedio ${fmt1(r.avg)}<br>Máx ${r.max} · mín ${r.min}<br>Quedaste ${ord(r.pos)}"/>`;
+  });
+  g += `<polyline class="avg" points="${avgPts}"/>`;
+  a.rows.forEach((r, i)=>{ g += `<circle class="avg-dot" cx="${pl + slot * (i + .5)}" cy="${y(r.avg)}" r="3"/>`; });
+  return `<svg class="dash-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Puntos por semana contra el promedio de la liga">${g}</svg>`;
+}
+function posChart(a){
+  const W = 640, H = 190, pl = 30, pr = 14, pt = 14, pb = 26, N = a.players;
+  const y = r=> pt + (H - pt - pb) * (r - 1) / Math.max(1, N - 1);
+  const slot = (W - pl - pr) / a.rows.length;
+  const x = i=> pl + slot * (i + .5);
+  const ticks = [...new Set([1, Math.ceil(N / 2), N])];
+  let g = ticks.map(t=> `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${pl - 8}" y="${y(t) + 4}" text-anchor="end">${ord(t)}</text>`).join('');
+  g += `<polyline class="line" points="${a.rows.map((r, i)=> `${x(i)},${y(r.pos)}`).join(' ')}"/>`;
+  a.rows.forEach((r, i)=>{
+    g += `<circle class="dot" cx="${x(i)}" cy="${y(r.pos)}" r="4.5"/>`;
+    g += `<text class="ax" x="${x(i)}" y="${H - 8}" text-anchor="middle">${r.wk.key.replace('WK', '')}</text>`;
+    g += `<rect class="hit" x="${pl + slot * i}" y="0" width="${slot}" height="${H - pb}" data-tip="<b>${r.wk.label}</b><br>Posición ${ord(r.pos)} de ${N}<br>${r.total} pts acumulados · Elo ${Math.round(r.elo)}"/>`;
+  });
+  const lastI = a.rows.length - 1;
+  g += `<text class="end" x="${Math.min(x(lastI) + 8, W - 2)}" y="${y(a.rows[lastI].pos) - 9}" text-anchor="end">${ord(a.rows[lastI].pos)}</text>`;
+  return `<svg class="dash-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Tu posición semana a semana">${g}</svg>`;
+}
+
+function renderDashboard(){
+  const el = document.getElementById('dash');
+  const pkMe = myPickemPlayer();
+  const a = pickemAnalysis(pkMe);
+  const s = survivorAnalysis();
+  const delta = (v, unit, invert)=>{
+    if(!v) return '<span class="dash-delta">Sin cambio</span>';
+    const good = invert ? v < 0 : v > 0;
+    return `<span class="dash-delta ${good ? 'up' : 'down'}">${good ? '▲' : '▼'} ${Math.abs(Math.round(v * 10) / 10)}${unit}</span>`;
+  };
+  let pips = '';
+  for(let i=0; i<s.start; i++) pips += `<span class="pc-pip ${i < s.lives ? '' : 'off'}"></span>`;
+  const initials = me.name.split(/\s+/).map(w=> w[0]).join('').slice(0, 2).toUpperCase();
+  const trend = !a ? null : a.last3Avg - a.avg >= 0.5 ? ['Al alza', 'up'] : a.avg - a.last3Avg >= 0.5 ? ['A la baja', 'down'] : ['Estable', ''];
+
+  let html = `<section class="dash-card dash-hero">
+    <div class="dash-me"><span class="dash-avatar">${escapeHtml(initials)}</span>
+      <div><div class="dash-name">${escapeHtml(me.name)}</div><div class="dash-sub">Pick'em general · Survivor · Temporada 2026</div></div></div>
+    <div class="dash-kpis">
+      <div><span>Posición</span><b>${a ? ord(a.last.pos) : '—'}</b><small>${a ? 'de ' + a.players : 'sin pick\'em'}</small></div>
+      <div><span>Puntos</span><b>${a ? a.total : '—'}</b><small>${a ? fmt1(a.avg) + ' por semana' : ''}</small></div>
+      <div><span>Elo</span><b>${a ? Math.round(a.last.elo) : '—'}</b><small>${a ? (a.last.eloChange >= 0 ? '+' : '') + Math.round(a.last.eloChange) + ' esta semana' : ''}</small></div>
+      <div><span>Vidas survivor</span><b class="${s.lives ? '' : 'out'}">${s.lives}</b><small class="dash-pips">${pips}</small></div>
+    </div>
+  </section>`;
+
+  if(a){
+    const posMove = a.prev ? a.prev.pos - a.last.pos : 0;
+    html += `<section class="dash-card">
+      <header><h3>Qué cambió esta semana</h3><p>${a.prev ? a.prev.wk.label + ' → ' : ''}${a.last.wk.label}</p></header>
+      <div class="dash-changes">
+        <div><span>Posición</span><b>${a.prev ? ord(a.prev.pos) + ' → ' : ''}${ord(a.last.pos)}</b>${delta(posMove, posMove === 1 || posMove === -1 ? ' lugar' : ' lugares')}</div>
+        <div><span>Puntos de la semana</span><b>${a.last.pts}</b>${delta(a.last.pts - a.last.avg, ' vs promedio')}</div>
+        <div><span>Elo</span><b>${Math.round(a.last.elo)}</b>${delta(a.last.eloChange, '')}</div>
+        <div><span>${a.last.pos === 1 ? 'Ventaja' : 'Para alcanzar'}</span><b>${a.last.pos === 1 ? (a.last.table[1] ? a.last.total - a.last.table[1].total : 0) : a.gapAbove} ${(a.last.pos === 1 ? (a.last.table[1] ? a.last.total - a.last.table[1].total : 0) : a.gapAbove) === 1 ? 'pt' : 'pts'}</b><span class="dash-delta">${a.last.pos === 1 ? 'sobre el 2º lugar' : 'al ' + ord(a.last.pos - 1) + ' · ' + a.gapLeader + ' del líder'}</span></div>
+      </div>
+    </section>`;
+  }
+
+  html += '<div class="dash-grid"><div class="dash-col">';
+  if(a){
+    html += `<section class="dash-card">
+        <header><h3>Semana a semana</h3><p>Arriba del promedio de la liga en <b>${a.aboveAvg} de ${a.n}</b> semanas.</p></header>
+        ${barChart(a)}
+        <div class="dash-legend"><span class="k-bar"></span>Tus puntos <span class="k-avg"></span>Promedio de la liga <span class="k-tag">MVP</span> más puntos de la semana <span class="k-tag sal">SALADO</span> menos puntos</div>
+      </section>
+      <section class="dash-card">
+        <header><h3>Tu posición</h3><p>Mejor: <b>${ord(a.bestPos.pos)}</b> en ${a.bestPos.wk.label} · Peor: <b>${ord(a.worstPos.pos)}</b> en ${a.worstPos.wk.label}</p></header>
+        ${posChart(a)}
+      </section>
+      <section class="dash-card dash-split">
+        <div><h3>Mejores semanas</h3><ol class="dash-list">${a.best.map(r=> `<li><span>${r.wk.label}</span><b>${r.pts} pts</b><small>${r.pts === r.max ? 'MVP · ' : ''}${ord(r.pos)} en la tabla</small></li>`).join('')}</ol></div>
+        <div><h3>Peores semanas</h3><ol class="dash-list">${a.worst.map(r=> `<li><span>${r.wk.label}</span><b>${r.pts} pts</b><small>${r.pts === r.min ? 'Salado · ' : ''}promedio ${fmt1(r.avg)}</small></li>`).join('')}</ol></div>
+      </section>`;
+  } else {
+    html += `<section class="dash-card"><header><h3>Pick'em</h3><p>${pkMe ? 'Todavía no hay semanas publicadas del pick\'em.' : 'No encontramos tu nombre en las posiciones del pick\'em.'}</p></header></section>`;
+  }
+  html += '</div><div class="dash-col">';
+  if(a){
+    html += `<section class="dash-card">
+        <header><h3>Tu temporada</h3><p>${a.n} semanas jugadas en el pick'em</p></header>
+        <dl class="dash-stats">
+          <div><dt>Promedio</dt><dd>${fmt1(a.avg)} <small>pts/semana</small></dd></div>
+          <div><dt>Tendencia</dt><dd class="${trend[1]}">${trend[0]} <small>últimas 3 semanas: ${fmt1(a.last3Avg)} vs ${fmt1(a.avg)} de promedio</small></dd></div>
+          <div><dt>Varianza</dt><dd>${fmt1(a.variance)} <small>desv. ${fmt1(a.sd)} pts</small></dd></div>
+          <div><dt>Mejor posición</dt><dd>${ord(a.bestPos.pos)} <small>${a.bestPos.wk.label}</small></dd></div>
+          <div><dt>Peor posición</dt><dd>${ord(a.worstPos.pos)} <small>${a.worstPos.wk.label}</small></dd></div>
+          <div><dt>MVPs de la semana</dt><dd class="up">${a.mvp.length} <small>${a.mvp.map(r=> r.wk.label).join(', ') || 'ninguno'}</small></dd></div>
+          <div><dt>Salados</dt><dd class="${a.salado.length ? 'down' : ''}">${a.salado.length} <small>${a.salado.map(r=> r.wk.label).join(', ') || 'ninguno'}</small></dd></div>
+          <div><dt>Al líder</dt><dd>${a.gapLeader} <small>pts · ${escapeHtml(a.last.leader.player.name)}</small></dd></div>
+        </dl>
+      </section>`;
+  }
+  html += `<section class="dash-card">
+      <header><h3>Survivor</h3><p>${s.lives ? 'Sigues vivo' : 'Eliminado'} · ${s.won}-${s.lost}${s.pending ? ' · ' + s.pending + ' pendiente' + (s.pending > 1 ? 's' : '') : ''}${s.missed ? ' · ' + s.missed + ' sin pick' : ''}</p></header>
+      <div class="dash-sv-now">${s.curPick ? teamChip(s.curPick, `<small>tu pick de ${escapeHtml(WEEK_LABEL[s.curWeek])}</small>`) : `<span class="dash-warn">Sin pick para ${escapeHtml(WEEK_LABEL[s.curWeek])}</span>`}</div>
+      <h4>Equipos fuertes que te quedan <small>${s.strongLeft.length} con récord ganador sin usar · ya usaste ${s.strongUsed}</small></h4>
+      <div class="dash-teams">${s.strongLeft.slice(0, 12).map(t=> teamChip(t.abbr, `<small>${recordText(s.records[t.abbr])}</small>`)).join('') || '<span class="empty-note">Ya no te quedan equipos con récord ganador.</span>'}</div>
+      <h4>Contra rivales débiles <small>${s.weak.length} de ${s.won + s.lost + s.pending} picks fueron contra un equipo con récord perdedor</small></h4>
+      <ul class="dash-mini">${s.weak.map(w=> `<li>${w.wk.label}: <b>${escapeHtml(w.team)}</b> vs ${escapeHtml(w.opp)} <small>(${recordText(w.oppRec)} en ese momento)</small> <em class="${w.st}">${w.st === 'won' ? 'ganó' : w.st === 'lost' ? 'perdió' : 'pendiente'}</em></li>`).join('') || '<li class="empty-note">Ninguno todavía.</li>'}</ul>
+      <h4>Tus "en contra" <small>${s.againstLosing} veces contra equipos con récord perdedor · tope ${state.maxAgainst} por rival</small></h4>
+      <ul class="dash-mini">${s.against.slice(0, 8).map(x=> `<li><b>${escapeHtml(x.abbr)}</b> ${x.count}× <small>récord ${recordText(x.rec)}</small>${x.count >= state.maxAgainst ? ' <em class="lost">tope</em>' : ''}${x.rec.pct !== null && x.rec.pct < 0.4 ? ' <em>muy perdedor</em>' : ''}</li>`).join('') || '<li class="empty-note">Todavía no hay picks.</li>'}</ul>
+    </section>`;
+  html += '</div></div>';
+  el.innerHTML = html;
+}
+/* Un solo tooltip para las graficas del resumen */
+(function(){
+  const tip = document.getElementById('dashTip');
+  document.addEventListener('mousemove', e=>{
+    const t = e.target.closest && e.target.closest('[data-tip]');
+    if(!t){ tip.hidden = true; return; }
+    tip.innerHTML = t.getAttribute('data-tip');
+    tip.hidden = false;
+    const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8);
+    tip.style.left = x + 'px';
+    tip.style.top = (e.clientY + 16) + 'px';
+  });
+})();
+
 /* ---------------- TABS ---------------- */
-const TAB_RENDERERS = { survivor: renderSurvivor, pickem: renderPickem, posiciones: renderStandings, tabla: renderGeneralTable, carrera: renderRace };
+const TAB_RENDERERS = { resumen: renderDashboard, survivor: renderSurvivor, pickem: renderPickem, posiciones: renderStandings, tabla: renderGeneralTable, carrera: renderRace };
 function renderActive(){
   if(!me) return;
   const active = document.querySelector('.tab-btn.active');
-  TAB_RENDERERS[active ? active.dataset.tab : 'survivor']();
+  TAB_RENDERERS[active ? active.dataset.tab : 'resumen']();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{

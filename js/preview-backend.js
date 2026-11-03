@@ -62,10 +62,105 @@ async function previewGames(){
   }).filter(g=> g.id && g.away && g.home && g.week in WEEK_INDEX);
 }
 
+/* El CSV de la temporada solo trae marcadores de las primeras semanas: los partidos que ya se
+   jugaron y no tienen marcador se completan con el marcador publico de ESPN (se guarda 15 min
+   en esta pestaña). Solo en la vista previa; la version con cuentas usa los que captura el admin. */
+const ESPN_ABBR = { WSH: 'WAS', JAC: 'JAX', LA: 'LAR' };
+async function previewFillScores(games){
+  const now = Date.now();
+  const weeks = [...new Set(games.filter(g=> !gameHasScore(g) && g.kickoff && Date.parse(g.kickoff) + 4 * 3600e3 < now).map(g=> g.week))];
+  if(!weeks.length) return;
+  let cache = null;
+  try{ cache = JSON.parse(sessionStorage.getItem('ra-preview-espn') || 'null'); }catch(e){}
+  if(!cache || now - cache.at > 15 * 60e3) cache = { at: now, weeks: {} };
+  await Promise.all(weeks.filter(wk=> !cache.weeks[wk]).map(async wk=>{
+    try{
+      const url = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=2026&seasontype=2&week=' + wk.slice(2);
+      const res = await (await fetch(url)).json();
+      cache.weeks[wk] = (res.events || []).map(e=>{
+        const c = e.competitions[0];
+        if(!c.status.type.completed) return null;
+        const side = h=> c.competitors.find(t=> t.homeAway === h);
+        const ab = t=> ESPN_ABBR[t.team.abbreviation] || t.team.abbreviation;
+        return { away: ab(side('away')), home: ab(side('home')), as: +side('away').score, hs: +side('home').score };
+      }).filter(Boolean);
+    }catch(e){ /* sin conexion: esos partidos se quedan sin marcador */ }
+  }));
+  try{ sessionStorage.setItem('ra-preview-espn', JSON.stringify(cache)); }catch(e){}
+  games.forEach(g=>{
+    if(gameHasScore(g)) return;
+    const s = (cache.weeks[g.week] || []).find(x=> x.away === g.away && x.home === g.home);
+    if(s){ g.away_score = s.as; g.home_score = s.hs; }
+  });
+}
+
+/* Pick'em general: lo mismo que hoy se carga en la liga (la hoja de puntos acumulados por semana
+   que usa la Carrera de Posiciones). Cada renglon se liga al jugador del survivor con el mismo nombre. */
+const PICKEM_SHEET_DEFAULT = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDmVx6q_EhmEGaX3VOleFCldYFyB8EXUDUPRS3bPPcxQ_WULn3yAoJwe6KnGkU8KugNVW8iCQLgAdu/pub?gid=2025594080&single=true&output=csv';
+function previewNameKey(s){ return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase(); }
+function previewCsvRows(text){
+  const rows = []; let row = [], field = '', q = false;
+  for(let i=0; i<text.length; i++){
+    const c = text[i];
+    if(q){ if(c === '"' && text[i+1] === '"'){ field += '"'; i++; } else if(c === '"') q = false; else field += c; }
+    else if(c === '"') q = true;
+    else if(c === ','){ row.push(field); field = ''; }
+    else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+    else if(c !== '\r') field += c;
+  }
+  if(field !== '' || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+async function previewPickemGeneral(svPlayers){
+  const cfg = previewRead('fantasy-race-config') || {};
+  let url = (cfg.csvUrl || PICKEM_SHEET_DEFAULT).trim().replace('/pubhtml', '/pub');
+  if(/docs\.google\.com\/spreadsheets\/d\/e\//.test(url) && !/[?&]output=csv/.test(url)) url += (url.includes('?') ? '&' : '?') + 'output=csv';
+  let rows;
+  try{ rows = previewCsvRows(await (await fetch(url, { cache: 'no-store' })).text()); }catch(e){ return { players: [], weekly: {} }; }
+  const head = rows.shift() || [];
+  const cols = head.map((h, i)=> ({ i, wk: resolvePreviewWeek(h) })).filter(c=> c.i > 0 && c.wk);
+  // Jugador del survivor con el mismo nombre; si no, uno cuyo nombre empiece igual (Lizeth / Lizette)
+  const sv = svPlayers.map(p=> ({ id: p.id, key: previewNameKey(p.name) }));
+  const idFor = name=>{
+    const k = previewNameKey(name);
+    const exact = sv.find(p=> p.key === k);
+    if(exact) return exact.id;
+    const near = k.length >= 5 ? sv.filter(p=> p.key.slice(0, 5) === k.slice(0, 5)) : [];
+    return near.length === 1 ? near[0].id : 'pk:' + k;
+  };
+  const players = [], cum = {};
+  rows.forEach(r=>{
+    const name = (r[0] || '').trim();
+    if(!name) return;
+    const id = idFor(name);
+    players.push({ id, name });
+    cum[id] = cols.map(c=> { const v = parseFloat(String(r[c.i] || '').replace(',', '.')); return isNaN(v) ? null : v; });
+  });
+  // Puntos de cada semana = acumulado - acumulado anterior; solo semanas en que algo cambio
+  const weekly = {};
+  cols.forEach((c, ci)=>{
+    const pts = {};
+    let changed = false;
+    players.forEach(p=>{
+      const now = cum[p.id][ci], prev = ci ? (cum[p.id][ci-1] ?? 0) : 0;
+      pts[p.id] = now == null ? 0 : now - prev;
+      if(pts[p.id] !== 0) changed = true;
+    });
+    if(changed) weekly[c.wk] = pts;
+  });
+  return { players, weekly };
+}
+function resolvePreviewWeek(h){
+  const m = String(h || '').match(/(\d+)/);
+  const n = m ? parseInt(m[1], 10) : 0;
+  return n >= 1 && n <= 18 ? 'WK' + n : null;
+}
+
 let previewDbPromise = null;
 function previewDb(){
   if(!previewDbPromise) previewDbPromise = (async ()=>{
     const [sv, games] = await Promise.all([previewSurvivorState(), previewGames()]);
+    const [pickem] = await Promise.all([previewPickemGeneral(sv.players), previewFillScores(games)]);
     const mine = previewRead(PREVIEW_PICKS_KEY) || {};
     const myPicks = { survivor: mine.survivor || {}, pickem: mine.pickem || {} };
     const players = sv.players.map((p, i)=>({
@@ -93,7 +188,7 @@ function previewDb(){
       startingLivesDefault: sv.startingLivesDefault ?? 3, missedPickCostsLife: !!sv.missedPickCostsLife,
       maxAgainst: sv.maxAgainst || 5, showLogos: !!sv.showLogos, tieMargin: DEFAULT_TIE_MARGIN
     };
-    return { sv, games, myPicks, settings, tables: {
+    return { sv, games, myPicks, settings, pickem, tables: {
       games, players, assets, survivor_picks: survivorPicks, pickem_picks: pickemPicks,
       settings: [{ id: 1, data: settings }], profiles: [], publications: []
     }};
@@ -114,10 +209,10 @@ function previewPublication(db){
     id: p.id, name: p.name, startingLives: p.startingLives ?? db.settings.startingLivesDefault, rowColor: p.rowColor || null,
     picks: Object.fromEntries(Object.entries(p.picks).filter(([wk])=> WEEK_INDEX[wk] <= limit))
   }));
-  const ids = players.map(p=>p.id);
   const tie = db.settings.tieMargin;
-  const pkLimit = WEEKS[Math.max(limit, ...t.games.filter(gameHasScore).map(g=> WEEK_INDEX[g.week]))].key;
-  const weekly = pickemWeekly(t.games, t.pickem_picks, ids, tie, pkLimit);
+  // Pick'em general: puntos y Elo de la hoja de la liga (no de los picks de prueba)
+  const weekly = db.pickem.weekly;
+  const pkIds = db.pickem.players.map(p=> p.id);
   const outcomes = {};
   t.games.forEach(g=>{ const o = gameOutcome(g, tie); if(o) outcomes[g.id] = o; });
   return {
@@ -125,7 +220,7 @@ function previewPublication(db){
     snapshot: { version: 1, throughWeek: through,
       survivor: { startingLivesDefault: db.settings.startingLivesDefault, missedPickCostsLife: db.settings.missedPickCostsLife,
                   maxAgainst: db.settings.maxAgainst, showLogos: db.settings.showLogos, players, finished, results: sv.results },
-      pickem: { tieMargin: tie, weekly, elo: computeElo(weekly, ids), outcomes } }
+      pickem: { tieMargin: tie, weekly, elo: computeElo(weekly, pkIds), outcomes, players: db.pickem.players } }
   };
 }
 

@@ -53,7 +53,7 @@
   }
   whenShown(start);
 
-  var CARDS = '.player-card, .pick-card, .logo-tile, .game-card, .team-chip, .team-tile, .pk-row, table.standings tbody tr';
+  var CARDS = '.dash-card, .player-card, .pick-card, .logo-tile, .game-card, .team-chip, .team-tile, .pk-row, table.standings tbody tr';
 
   function start(){
     gsap.timeline({defaults:{ease:'expo.out', duration:.9, clearProps:CLEAR}})
