@@ -105,8 +105,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <style id="ra-ui">
   /* ====== Interfaz RA — mismo tema que la portada (index.html): carbón + lima ======
-     Sólo cambia los controles. El póster, la tabla, las tarjetas y el canvas que se
-     exportan conservan su diseño y sus fuentes. */
+     Controles y animación con el mismo tema (el canvas se dibuja con los colores RA
+     definidos en el script, ver RA / raFont). */
   body.ra-ui{
     --ra-ink:#0b0d0f; --ra-surface:#15181b; --ra-surface-2:#1d2125; --ra-surface-3:#272c31; --ra-field:#0f1214;
     --ra-line:rgba(255,255,255,0.07); --ra-line-2:rgba(255,255,255,0.13);
@@ -219,6 +219,40 @@
   body.ra-ui .transport button{ padding:9px 14px; font-size:11px; }
   body.ra-ui .transport .wk{ font-family:var(--ra-font); font-stretch:115%; font-weight:800; font-size:13px; color:var(--ra-accent); padding-right:10px; }
   body.ra-ui .tip{ font-family:var(--ra-font); color:var(--ra-faint); }
+
+  /* ====== Mi carrera: race.html?me=Nombre (el portal lo muestra dentro de su pestaña) ====== */
+  .me-bar{ display:none; }
+  body.me-mode{ padding:0; min-height:0; background:transparent; }
+  body.me-mode::before, body.me-mode::after{ display:none; }
+  body.me-mode .app{ grid-template-columns:1fr; max-width:none; gap:0; }
+  body.me-mode .panel{ display:none; }
+  body.me-mode .stage{ gap:10px; }
+  body.me-mode canvas#race{ max-width:min(100%, 640px); max-height:none; box-shadow:0 18px 50px rgba(0,0,0,0.5); }
+  body.me-mode.fmt-horizontal canvas#race{ max-width:100%; }
+  body.me-mode .transport{ max-width:640px; }
+  body.me-mode .me-bar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; width:100%;
+    font-family:var(--ra-font); font-size:13px; color:var(--ra-dim);
+  }
+  .me-bar label{ display:flex; align-items:center; gap:8px; }
+  .me-bar select{
+    font-family:var(--ra-font); font-size:13px; color:var(--ra-chalk); background:var(--ra-field);
+    border:1px solid var(--ra-line-2); border-radius:0; padding:7px 10px;
+  }
+  .me-bar select:focus{ outline:none; border-color:var(--ra-accent); }
+  .me-bar .seg{ display:flex; gap:3px; }
+  .me-bar .seg button{ padding:8px 12px; }
+  .me-bar .btn{ width:auto; padding:9px 14px; font-size:11px; }
+  .me-bar .status{ margin:0; flex-basis:100%; }
+  .me-stats{ display:flex; flex-wrap:wrap; gap:4px; width:100%; }
+  .me-stat{ flex:1 1 120px; background:var(--ra-surface-2); padding:12px 14px 10px; }
+  .me-stat b{ display:block; font-stretch:110%; font-weight:700; font-size:26px; line-height:1; color:var(--ra-chalk); font-variant-numeric:tabular-nums; }
+  .me-stat b.up{ color:var(--ra-accent); }
+  .me-stat b.down{ color:var(--ra-danger); }
+  .me-stat span{ display:block; font-size:11.5px; color:var(--ra-dim); margin-top:5px; }
+  .me-stat small{ color:var(--ra-faint); }
+  .me-miss{ width:100%; padding:12px 14px; border:1px dashed var(--ra-line-2); color:var(--ra-dim); font-family:var(--ra-font); font-size:13px; }
+  .me-miss[hidden]{ display:none; }
 </style>
 </head>
 <body class="ra-ui">
@@ -297,6 +331,16 @@
   </aside>
 
   <main class="stage">
+    <div class="me-bar" id="meBar">
+      <div class="me-stats" id="meStats"></div>
+      <div class="me-miss" id="meMiss" hidden>No encontré tu nombre en la hoja de puntos de la liga. Elige cuál eres en la lista de abajo.</div>
+      <label>Tú eres <select id="meSelect"></select></label>
+      <div class="seg" id="meModeSeg">
+        <button data-mode="rank">Posiciones</button>
+        <button data-mode="score">Puntos</button>
+      </div>
+      <span id="meDownloads"></span>
+    </div>
     <div class="canvas-wrap"><canvas id="race" width="1080" height="1350"></canvas></div>
     <div class="transport">
       <button class="btn btn-ghost" id="btnPlay" disabled>▶ Play</button>
@@ -315,8 +359,8 @@ const STANDINGS_CORE_KEY = 'fantasy-poster-core';
 const DEFAULT_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDmVx6q_EhmEGaX3VOleFCldYFyB8EXUDUPRS3bPPcxQ_WULn3yAoJwe6KnGkU8KugNVW8iCQLgAdu/pub?gid=2025594080&single=true&output=csv';
 
 const PALETTE = [
-  '#ff4d6d','#4dabf7','#ffd43b','#51cf66','#b197fc','#ff922b','#3bc9db','#f783ac','#a9e34b','#748ffc',
-  '#e599f7','#ffa94d','#63e6be','#ff8787','#91a7ff','#fcc419','#20c997','#da77f2','#c0eb75','#ffc9c9'
+  '#ff4d6d','#4dabf7','#ffd43b','#51cf66','#b197fc','#ff922b','#3bc9db','#f783ac','#ff6b6b','#748ffc',
+  '#e599f7','#ffa94d','#63e6be','#ff8787','#91a7ff','#fcc419','#20c997','#da77f2','#66d9e8','#ffc9c9'
 ];
 const FORMATS = { vertical:{w:1080,h:1350}, horizontal:{w:1920,h:1080} };
 
@@ -326,6 +370,13 @@ let progress = 0, playing = false, lastTs = null, dirty = true;
 let highlighted = new Set();
 let labelHits = [];        // [{name,x,y,w,h}] desde el último cuadro, para clics
 let recording = null;
+
+/* Mi carrera: ?me=Nombre enfoca a esa persona (el portal lo usa en su pestaña "Mi Carrera").
+   La configuración del admin (link, liga, velocidad) se lee pero no se cambia desde aquí. */
+const ME_PARAM = new URLSearchParams(location.search).get('me');
+const ME_MODE = ME_PARAM !== null;
+const ME_MAP_KEY = 'ra-race-me';   // { nombre en el portal: nombre en la hoja } cuando no coinciden
+let focusName = null;
 
 /* ============================================================
    CONFIG
@@ -342,6 +393,7 @@ function loadCfg(){
   }catch(e){}
 }
 function saveCfg(){
+  if(ME_MODE) return;
   try{ localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){}
 }
 
@@ -484,6 +536,7 @@ async function loadData(){
     el('scrub').max = timeline().U;
     ['btnPlay','btnReplay','scrub','btnRecord','btnPng'].forEach(id => el(id).disabled = false);
     highlighted = new Set([...highlighted].filter(n => data.players.some(p => p.name === n)));
+    if(ME_MODE) setupFocus();
     progress = 0;
     play();
   }catch(e){
@@ -528,6 +581,24 @@ function niceMax(v){
   return { max: Math.ceil(v / step) * step || step, step };
 }
 
+/* Tema RA (igual que la página): carbón + lima, Saira. fontStretch da el ancho de Saira
+   en Chrome/Edge; donde no existe, se queda en ancho normal. */
+const RA = { ink:'#0b0d0f', surface:'#15181b', chalk:'#eef0f1', dim:'#9aa1a8', faint:'#646c74', lime:'#c8f31d', limeInk:'#101400' };
+function raFont(weight, size, stretch){
+  ctx.font = weight + ' ' + size + "px Saira, 'Oswald', sans-serif";
+  if('fontStretch' in ctx) ctx.fontStretch = stretch || 'normal';
+}
+let stripePattern = null;
+function stripes(){
+  if(stripePattern) return stripePattern;
+  const c = document.createElement('canvas'); c.width = c.height = 14;
+  const x = c.getContext('2d');
+  x.strokeStyle = 'rgba(255,255,255,0.025)'; x.lineWidth = 3;
+  x.beginPath(); x.moveTo(-2, 16); x.lineTo(16, -2); x.stroke();
+  x.beginPath(); x.moveTo(-2, 2); x.lineTo(2, -2); x.moveTo(12, 16); x.lineTo(16, 12); x.stroke();
+  return (stripePattern = ctx.createPattern(c, 'repeat'));
+}
+
 function slantedBar(x, y, w, h, colors, slantLeft){
   const g = ctx.createLinearGradient(x, 0, x + w, 0);
   colors.forEach((c, i) => g.addColorStop(i / (colors.length - 1), c));
@@ -551,35 +622,35 @@ function draw(u){
   ctx.textBaseline = 'middle';
 
   // Fondo
-  let g = ctx.createLinearGradient(0, 0, W * 0.4, H);
-  g.addColorStop(0, '#0d1236'); g.addColorStop(0.6, '#070a1c'); g.addColorStop(1, '#020309');
+  ctx.fillStyle = RA.ink; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = stripes(); ctx.fillRect(0, 0, W, H);
+  // Resplandor lima arriba y filo lima a la izquierda, como en la página
+  let g = ctx.createRadialGradient(W / 2, -H * 0.05, 0, W / 2, -H * 0.05, W * 0.75);
+  g.addColorStop(0, 'rgba(200,243,29,0.20)'); g.addColorStop(1, 'rgba(200,243,29,0)');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  g = ctx.createRadialGradient(W * 0.9, 0, 0, W * 0.9, 0, W * 0.8);
-  g.addColorStop(0, 'rgba(139,108,245,0.28)'); g.addColorStop(1, 'rgba(139,108,245,0)');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  g = ctx.createRadialGradient(0, H, 0, 0, H, W * 0.8);
-  g.addColorStop(0, 'rgba(43,62,245,0.22)'); g.addColorStop(1, 'rgba(43,62,245,0)');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, RA.lime); g.addColorStop(0.6, 'rgba(200,243,29,0.25)'); g.addColorStop(1, 'rgba(200,243,29,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 8, H);
 
   // Encabezado: liga (derecha) + título/semana (izquierda)
   const league = (cfg.leagueName || '').toUpperCase();
-  ctx.font = 'italic 700 ' + (L.vertical ? 44 : 48) + 'px Oswald';
+  raFont(900, L.vertical ? 40 : 44, 'expanded');
   const lw = Math.min(W * 0.62, ctx.measureText(league).width + 110);
-  slantedBar(W - lw, 22, lw, L.header - 44, ['#e0342a', '#8b6cf5'], true);
-  ctx.fillStyle = '#fff'; ctx.textAlign = 'right';
+  slantedBar(W - lw, 22, lw, L.header - 44, [RA.lime, RA.lime], true);
+  ctx.fillStyle = RA.limeInk; ctx.textAlign = 'right';
   ctx.fillText(league, W - 34, L.header / 2 + 1, lw - 90);
 
   const wkIdx = data ? Math.min(data.weeks.length - 1, Math.round(t)) : 0;
   ctx.textAlign = 'left';
-  ctx.font = '600 ' + (L.vertical ? 22 : 24) + 'px Oswald';
-  ctx.fillStyle = 'rgba(244,245,251,0.62)';
-  ctx.fillText(cfg.mode === 'rank' ? 'CARRERA DE POSICIONES' : 'CARRERA DE PUNTOS', 34, L.header / 2 - 20);
-  ctx.font = (L.vertical ? 46 : 52) + 'px "Archivo Black"';
-  ctx.fillStyle = '#f2d24b';
+  raFont(600, L.vertical ? 22 : 24);
+  ctx.fillStyle = RA.dim;
+  ctx.fillText(focusName ? 'LA CARRERA DE ' + focusName.toUpperCase() : (cfg.mode === 'rank' ? 'CARRERA DE POSICIONES' : 'CARRERA DE PUNTOS'), 34, L.header / 2 - 20, W * 0.5);
+  raFont(900, L.vertical ? 50 : 56, 'expanded');
+  ctx.fillStyle = RA.lime;
   ctx.fillText(data ? 'SEMANA ' + (data.weeks[wkIdx] || '').replace(/^WK\s*/, '') : '', 34, L.header / 2 + 20);
 
   if(!data){
-    ctx.font = '500 30px Oswald'; ctx.fillStyle = 'rgba(244,245,251,0.6)'; ctx.textAlign = 'center';
+    raFont(500, 30); ctx.fillStyle = RA.dim; ctx.textAlign = 'center';
     ctx.fillText('Carga tu link CSV para empezar', W / 2, H / 2);
     return;
   }
@@ -602,7 +673,7 @@ function draw(u){
     : v => L.plotB - v * (L.plotB - L.plotT) / sMax.max;
 
   // Etiquetas de semanas (diagonales, como en la tabla)
-  ctx.font = '700 ' + L.weekFont + 'px Oswald';
+  raFont(800, L.weekFont, 'semi-expanded');
   ctx.textAlign = 'left';
   data.weeks.forEach((wk, w) => {
     const x = xOfWeek(w);
@@ -610,10 +681,10 @@ function draw(u){
     ctx.save();
     ctx.translate(x - 6, L.plotT - 26);
     ctx.rotate(-Math.PI / 5);
-    ctx.fillStyle = w <= st.w ? (w === wkIdx ? '#f2d24b' : '#f4f5fb') : 'rgba(244,245,251,0.28)';
+    ctx.fillStyle = w <= st.w ? (w === wkIdx ? RA.lime : RA.chalk) : 'rgba(238,240,241,0.25)';
     ctx.fillText(wk, 0, 0);
     ctx.restore();
-    ctx.strokeStyle = 'rgba(150,165,255,0.10)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, L.plotT - 10); ctx.lineTo(x, L.plotB); ctx.stroke();
   });
@@ -627,14 +698,14 @@ function draw(u){
   } else {
     for(let v=0; v<=sMax.max; v+=sMax.step) ticks.push(v);
   }
-  ctx.font = '700 ' + (L.vertical ? 24 : 24) + 'px Oswald';
+  raFont(700, 24, 'semi-expanded');
   ctx.textAlign = 'right';
   ticks.forEach(v => {
     const y = yOf(v);
-    ctx.strokeStyle = 'rgba(244,245,251,0.16)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
     ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(L.plotL - 10, y); ctx.lineTo(L.plotR + 6, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(244,245,251,0.7)';
+    ctx.fillStyle = RA.dim;
     ctx.fillText(String(v), L.plotL - 22, y);
   });
 
@@ -695,26 +766,38 @@ function draw(u){
     ctx.globalAlpha = dim ? 0.3 : 1;
     ctx.beginPath(); ctx.arc(x, y, highlighted.has(p.name) ? 15 : 12, 0, Math.PI * 2);
     ctx.fillStyle = p.color; ctx.fill();
-    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(5,8,20,0.85)'; ctx.stroke();
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(11,13,15,0.9)'; ctx.stroke();
 
     const val = cfg.mode === 'rank' ? p.ranks[wkRound] : Math.round(valAt(p, t));
     const txt = p.name + '  ' + val;
-    ctx.font = (highlighted.has(p.name) ? '700 ' : '600 ') + L.labelFont + 'px Oswald';
+    raFont(highlighted.has(p.name) ? 800 : 600, L.labelFont, highlighted.has(p.name) ? 'semi-expanded' : 'normal');
     const lx = x + 24;
     if(Math.abs(ly - y) > 4){
       ctx.strokeStyle = p.color; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(x + 12, y); ctx.lineTo(lx - 4, ly); ctx.stroke();
     }
-    ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(5,8,20,0.9)';
-    ctx.strokeText(txt, lx, ly);
-    ctx.fillStyle = p.color;
-    ctx.fillText(txt, lx, ly);
+    if(p.name === focusName){
+      // La persona del portal: etiqueta en bloque de su color, con "TÚ" al frente
+      const tag = 'TÚ', tw = ctx.measureText(txt).width, tagW = ctx.measureText(tag).width + 16;
+      ctx.fillStyle = RA.lime;
+      ctx.fillRect(lx - 8, ly - gap / 2 - 2, tagW, gap + 4);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(lx - 8 + tagW, ly - gap / 2 - 2, tw + 16, gap + 4);
+      ctx.fillStyle = RA.limeInk;
+      ctx.fillText(tag, lx, ly);
+      ctx.fillText(txt, lx + tagW, ly);
+    } else {
+      ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(11,13,15,0.92)';
+      ctx.strokeText(txt, lx, ly);
+      ctx.fillStyle = p.color;
+      ctx.fillText(txt, lx, ly);
+    }
     labelHits.push({ name: p.name, x: x - 16, y: ly - gap / 2, w: lx - x + 16 + ctx.measureText(txt).width, h: gap });
     ctx.globalAlpha = 1;
   });
 
   // Barra inferior
-  slantedBar(L.W * 0.28, H - 26, L.W * 0.72, 26, ['#2b3ef5', '#8b6cf5'], true);
+  slantedBar(L.W * 0.28, H - 26, L.W * 0.72, 26, ['rgba(200,243,29,0.2)', RA.lime], true);
 }
 
 /* ============================================================
@@ -806,7 +889,8 @@ function downloadBlob(blob, filename){
 }
 function fileStem(){
   const wk = data ? data.weeks[data.lastPlayed].replace(/\s+/g, '').toLowerCase() : '';
-  return 'carrera-' + (cfg.mode === 'rank' ? 'posiciones' : 'puntos') + '-' + wk;
+  const who = focusName ? '-' + nameKey(focusName).replace(/[^a-z0-9]+/g, '-') : '';
+  return 'carrera-' + (cfg.mode === 'rank' ? 'posiciones' : 'puntos') + who + '-' + wk;
 }
 
 function startRecording(){
@@ -889,8 +973,9 @@ canvas.addEventListener('click', e => {
   const x = (e.clientX - r.left) * canvas.width / r.width;
   const y = (e.clientY - r.top) * canvas.height / r.height;
   const hit = labelHits.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
-  if(hit){ highlighted.has(hit.name) ? highlighted.delete(hit.name) : highlighted.add(hit.name); }
-  else highlighted.clear();
+  if(hit && hit.name !== focusName){ highlighted.has(hit.name) ? highlighted.delete(hit.name) : highlighted.add(hit.name); }
+  else if(!hit) highlighted.clear();
+  if(focusName) highlighted.add(focusName);
   dirty = true;
 });
 document.addEventListener('keydown', e => {
@@ -899,8 +984,74 @@ document.addEventListener('keydown', e => {
   }
 });
 
+/* ============================================================
+   MI CARRERA
+   ============================================================ */
+function readMeMap(){ try{ return JSON.parse(localStorage.getItem(ME_MAP_KEY) || '{}') || {}; }catch(e){ return {}; } }
+function setupFocus(){
+  const saved = readMeMap()[nameKey(ME_PARAM)];
+  const byName = n => data.players.find(p => nameKey(p.name) === nameKey(n));
+  const found = (saved && byName(saved)) || byName(ME_PARAM);
+  el('meMiss').hidden = !!found;
+  const sel = el('meSelect');
+  sel.innerHTML = (found ? '' : '<option value="">— Elige —</option>')
+    + data.players.map(p => `<option>${p.name.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}</option>`).join('');
+  setFocus(found ? found.name : null);
+}
+function setFocus(name){
+  focusName = name;
+  highlighted = new Set(name ? [name] : []);
+  el('meSelect').value = name || '';
+  renderMeStats();
+  dirty = true;
+}
+function renderMeStats(){
+  const box = el('meStats');
+  const p = focusName && data.players.find(x => x.name === focusName);
+  if(!p){ box.innerHTML = ''; return; }
+  const w = data.lastPlayed, N = data.players.length;
+  const now = p.ranks[w], prev = w > 0 ? p.ranks[w - 1] : now, move = prev - now;
+  let best = 0, worst = 0;
+  p.ranks.slice(0, w + 1).forEach((r, i) => { if(r < p.ranks[best]) best = i; if(r > p.ranks[worst]) worst = i; });
+  const stat = (val, lbl, cls) => `<div class="me-stat"><b class="${cls || ''}">${val}</b><span>${lbl}</span></div>`;
+  box.innerHTML =
+    stat(now + 'º <small>de ' + N + '</small>', 'Posición en ' + data.weeks[w]) +
+    stat(move > 0 ? '▲' + move : move < 0 ? '▼' + (-move) : '—', 'Contra la semana pasada', move > 0 ? 'up' : move < 0 ? 'down' : '') +
+    stat(p.ranks[best] + 'º', 'Mejor posición · ' + data.weeks[best]) +
+    stat(p.ranks[worst] + 'º', 'Peor posición · ' + data.weeks[worst]) +
+    stat(Math.round(p.vals[w]), 'Puntos acumulados');
+}
+function setupMeMode(){
+  document.body.classList.add('me-mode');
+  // Los botones de descarga viven en el panel (oculto en este modo): se pasan a la barra
+  ['btnRecord', 'btnPng', 'recStatus'].forEach(id => el('meDownloads').before(el(id)));
+  el('btnRecord').textContent = 'Descargar mi video';
+  el('btnPng').textContent = 'Descargar imagen';
+  el('btnPng').className = 'btn btn-ghost';
+  document.querySelector('.tip').textContent = 'Tu línea va resaltada. Toca otro nombre para compararte con esa persona.';
+  el('meSelect').addEventListener('change', e => {
+    const map = readMeMap();
+    map[nameKey(ME_PARAM)] = e.target.value;
+    try{ localStorage.setItem(ME_MAP_KEY, JSON.stringify(map)); }catch(err){}
+    el('meMiss').hidden = !!e.target.value;
+    setFocus(e.target.value || null);
+  });
+  document.querySelectorAll('#meModeSeg button').forEach(b => b.addEventListener('click', () => {
+    cfg.mode = b.dataset.mode; setSeg('meModeSeg', 'mode', cfg.mode); dirty = true;
+  }));
+  // El portal ajusta la altura del marco a lo que mide esta página
+  const report = () => parent !== window && parent.postMessage({ type: 'race-height', h: document.documentElement.scrollHeight }, location.origin);
+  new ResizeObserver(report).observe(document.body);
+}
+
 (async function init(){
   loadCfg();
+  if(ME_MODE){
+    // Siempre vertical, con todo el recorrido enfocado en la persona
+    cfg.format = 'vertical';
+    setupMeMode();
+    setSeg('meModeSeg', 'mode', cfg.mode);
+  }
   el('csvUrl').value = cfg.csvUrl || '';
   el('standingsUrl').value = cfg.standingsUrl || '';
   el('leagueName').value = cfg.leagueName || '';
@@ -910,7 +1061,8 @@ document.addEventListener('keydown', e => {
   setSeg('modeSeg', 'mode', cfg.mode);
   setSeg('formatSeg', 'format', cfg.format);
   applyFormat();
-  try{ await Promise.all([document.fonts.load('700 30px Oswald'), document.fonts.load('600 30px Oswald'), document.fonts.load('italic 700 40px Oswald'), document.fonts.load('40px "Archivo Black"')]); }catch(e){}
+  document.body.classList.toggle('fmt-horizontal', cfg.format === 'horizontal');
+  try{ await Promise.all(['500', '600', '700', '800', '900'].map(w => document.fonts.load(w + ' 30px Saira'))); }catch(e){}
   requestAnimationFrame(frame);
   if(cfg.csvUrl) loadData();
 })();

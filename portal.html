@@ -44,6 +44,7 @@
       <button class="tab-btn" data-tab="pickem">Pick'em</button>
       <button class="tab-btn" data-tab="posiciones">Posiciones</button>
       <button class="tab-btn" data-tab="tabla">Survivor Tabla</button>
+      <button class="tab-btn" data-tab="carrera">Mi Carrera</button>
     </div>
 
     <!-- SURVIVOR -->
@@ -97,6 +98,16 @@
           <div class="group"><span class="empty-note">Pick'em: puntos acumulados; el Elo mide qué tan bien te fue cada semana contra los demás.</span></div>
         </div>
         <div class="standings-scroll"><table class="standings" id="standingsTable"></table></div>
+      </div>
+    </div>
+
+    <!-- MI CARRERA -->
+    <div class="tab-content" id="tab-carrera">
+      <div class="panel">
+        <div class="toolbar">
+          <div class="group"><span class="empty-note">Cómo te has movido en la tabla de la liga de fantasy, semana a semana. Es la misma carrera de posiciones de la liga, enfocada en ti.</span></div>
+        </div>
+        <iframe class="race-frame" id="raceFrame" title="Mi carrera de posiciones" loading="lazy"></iframe>
       </div>
     </div>
 
@@ -389,8 +400,20 @@ function renderGeneralTable(){
   });
 }
 
+/* ---------------- MI CARRERA ---------------- */
+/* race.html?me=Nombre: la misma animacion de la carrera, con tu linea resaltada */
+function renderRace(){
+  const frame = document.getElementById('raceFrame');
+  const src = 'race.html?me=' + encodeURIComponent(me.name);
+  if(frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+}
+window.addEventListener('message', e=>{
+  if(e.origin !== location.origin || !e.data || e.data.type !== 'race-height') return;
+  document.getElementById('raceFrame').style.height = e.data.h + 'px';
+});
+
 /* ---------------- TABS ---------------- */
-const TAB_RENDERERS = { survivor: renderSurvivor, pickem: renderPickem, posiciones: renderStandings, tabla: renderGeneralTable };
+const TAB_RENDERERS = { survivor: renderSurvivor, pickem: renderPickem, posiciones: renderStandings, tabla: renderGeneralTable, carrera: renderRace };
 function renderActive(){
   if(!me) return;
   const active = document.querySelector('.tab-btn.active');
