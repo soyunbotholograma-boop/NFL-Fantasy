@@ -149,3 +149,21 @@ body.ra-ui table.standings td.pos{ font-stretch:110%; }
 body.ra-ui table.standings td.pts{ color:var(--ra-accent); font-stretch:110%; }
 body.ra-ui table.standings tr.me td{ background:rgba(200,243,29,0.08); }
 body.ra-ui table.standings tr.me td.pos{ box-shadow:inset 3px 0 0 var(--ra-accent); }
+
+/* ---------- survivor tabla (mismo tema que Posiciones; el poster exportable vive en el admin) ---------- */
+table.sv-standings th:first-child, table.sv-standings td.namecell{ text-align:left; }
+table.sv-standings td{ padding:7px 6px; }
+table.sv-standings td.namecell{ font-weight:600; white-space:nowrap; padding-right:14px; }
+/* Sin color de renglon del poster: todos con el mismo fondo */
+table.sv-standings tr[style], table.sv-standings td[style]{ background:transparent !important; color:inherit !important; }
+table.sv-standings tr.out-row td{ opacity:.45; }
+table.sv-standings tr.out-row td.namecell{ text-decoration:line-through; }
+table.sv-standings .cell-logo{ width:28px; height:28px; }
+table.sv-standings .cell-pick{ font-size:10.5px; min-width:34px; }
+table.sv-standings .pip{ width:10px; height:10px; }
+body.ra-ui table.sv-standings td.namecell{ font-stretch:105%; }
+body.ra-ui table.sv-standings tbody tr:hover td{ background:rgba(255,255,255,0.03) !important; }
+body.ra-ui table.sv-standings tr.me td{ background:rgba(200,243,29,0.08) !important; }
+body.ra-ui table.sv-standings tr.me td.namecell{ box-shadow:inset 3px 0 0 var(--ra-accent); color:var(--ra-accent) !important; }
+body.ra-ui table.sv-standings .pip.on{ background:var(--ra-accent); border-color:var(--ra-accent); box-shadow:0 0 6px rgba(200,243,29,0.5); }
+body.ra-ui table.sv-standings .pip{ border-radius:0; }
