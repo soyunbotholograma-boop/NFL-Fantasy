@@ -333,7 +333,7 @@
   <main class="stage">
     <div class="me-bar" id="meBar">
       <div class="me-stats" id="meStats"></div>
-      <div class="me-miss" id="meMiss" hidden>No encontré tu nombre en la hoja de puntos de la liga. Elige cuál eres en la lista de abajo.</div>
+      <div class="me-miss" id="meMiss" hidden>No encontré tu nombre en las posiciones del pick'em. Elige cuál eres en la lista de abajo.</div>
       <label>Tú eres <select id="meSelect"></select></label>
       <div class="seg" id="meModeSeg">
         <button data-mode="rank">Posiciones</button>
@@ -527,22 +527,27 @@ async function loadData(){
         if(!posMap) note = ' · No encontré la columna Posicion en standings.';
       }catch(e){ note = ' · No pude leer standings (' + e.message + ').'; }
     }
-    data = buildData(rows, posMap);
-    if(posMap){
-      const missing = data.players.filter(p => p.pos === null).map(p => p.name);
-      note = missing.length ? ' · Sin Posicion: ' + missing.join(', ') : ' · Desempate con Posicion ✓';
-    }
-    status.textContent = data.players.length + ' jugadores · ' + data.weeks.length + ' semanas (última jugada: ' + data.weeks[data.lastPlayed] + ')' + note;
-    el('scrub').max = timeline().U;
-    ['btnPlay','btnReplay','scrub','btnRecord','btnPng'].forEach(id => el(id).disabled = false);
-    highlighted = new Set([...highlighted].filter(n => data.players.some(p => p.name === n)));
-    if(ME_MODE) setupFocus();
-    progress = 0;
-    play();
+    useData(rows, posMap, note);
   }catch(e){
     status.className = 'status err';
     status.textContent = 'Error al cargar: ' + e.message;
   }
+}
+function useData(rows, posMap, note, ranks){
+  data = buildData(rows, posMap);
+  // Posiciones dadas (las de la tabla del pick'em, que desempata por Elo) en lugar de calcularlas
+  if(ranks) data.players.forEach(p => { const r = ranks[p.name]; if(r && r.length === p.ranks.length) p.ranks = r.slice(); });
+  if(posMap && !ME_MODE){
+    const missing = data.players.filter(p => p.pos === null).map(p => p.name);
+    note = missing.length ? ' · Sin Posicion: ' + missing.join(', ') : ' · Desempate con Posicion ✓';
+  }
+  el('status').textContent = data.players.length + ' jugadores · ' + data.weeks.length + ' semanas (última jugada: ' + data.weeks[data.lastPlayed] + ')' + (note || '');
+  el('scrub').max = timeline().U;
+  ['btnPlay','btnReplay','scrub','btnRecord','btnPng'].forEach(id => el(id).disabled = false);
+  highlighted = new Set([...highlighted].filter(n => data.players.some(p => p.name === n)));
+  if(ME_MODE) setupFocus();
+  progress = 0;
+  play();
 }
 
 /* ============================================================
@@ -1064,7 +1069,18 @@ function setupMeMode(){
   document.body.classList.toggle('fmt-horizontal', cfg.format === 'horizontal');
   try{ await Promise.all(['500', '600', '700', '800', '900'].map(w => document.fonts.load(w + ' 30px Saira'))); }catch(e){}
   requestAnimationFrame(frame);
-  if(cfg.csvUrl) loadData();
+  if(ME_MODE){
+    /* El portal manda { rows: [['Jugadores','WK 1',...], [nombre, acumulado...]], pos: [[nombre, posicion]],
+       ranks: { nombre: [posicion por semana] } }
+       con los puntos de su pick'em general */
+    window.addEventListener('message', e => {
+      if(e.origin !== location.origin || !e.data || e.data.type !== 'race-data') return;
+      try{ useData(e.data.rows, new Map((e.data.pos || []).map(([n, pos]) => [nameKey(n), pos])), '', e.data.ranks); }
+      catch(err){ el('meMiss').hidden = false; el('meMiss').textContent = 'Todavía no hay puntos del pick\'em para armar tu carrera.'; }
+    });
+    if(parent !== window) parent.postMessage({ type: 'race-ready' }, location.origin);
+  }
+  else if(cfg.csvUrl) loadData();
 })();
 </script>
 <script id="ra-motion">

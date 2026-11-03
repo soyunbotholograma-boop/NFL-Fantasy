@@ -170,6 +170,21 @@ function usedTeams(player, excludeWeekKey){
   });
   return set;
 }
+/* Record real de cada equipo con los marcadores de `games` (antes de beforeWeekKey, si se da):
+   { abbr: { w, l, t, pct } }. pct cuenta el empate como medio partido ganado. */
+function teamRecords(games, beforeWeekKey){
+  const limit = beforeWeekKey ? WEEK_INDEX[beforeWeekKey] : Infinity;
+  const rec = Object.fromEntries(TEAMS.map(t=>[t.abbr, { w: 0, l: 0, t: 0, pct: null }]));
+  games.forEach(g=>{
+    if(!gameHasScore(g) || !(g.week in WEEK_INDEX) || WEEK_INDEX[g.week] >= limit || !rec[g.away] || !rec[g.home]) return;
+    if(g.away_score === g.home_score){ rec[g.away].t++; rec[g.home].t++; }
+    else if(g.away_score > g.home_score){ rec[g.away].w++; rec[g.home].l++; }
+    else { rec[g.home].w++; rec[g.away].l++; }
+  });
+  Object.values(rec).forEach(r=>{ const n = r.w + r.l + r.t; r.pct = n ? (r.w + r.t / 2) / n : null; });
+  return rec;
+}
+function recordText(r){ return r ? `${r.w}-${r.l}${r.t ? '-' + r.t : ''}` : '0-0'; }
 function weekStatus(player, weekKey, timeline){
   const pick = player.picks[weekKey];
   if(!pick) return (timeline || playerTimeline(player)).missed.has(weekKey) ? 'missed' : 'none';
