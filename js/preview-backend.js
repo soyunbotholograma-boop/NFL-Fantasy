@@ -116,9 +116,16 @@ async function previewPickemGeneral(svPlayers){
   let url = (cfg.csvUrl || PICKEM_SHEET_DEFAULT).trim().replace('/pubhtml', '/pub');
   if(/docs\.google\.com\/spreadsheets\/d\/e\//.test(url) && !/[?&]output=csv/.test(url)) url += (url.includes('?') ? '&' : '?') + 'output=csv';
   let rows;
-  try{ rows = previewCsvRows(await (await fetch(url, { cache: 'no-store' })).text()); }catch(e){ return { players: [], weekly: {} }; }
+  try{ rows = previewCsvRows(await (await fetch(url, { cache: 'no-store' })).text()); }catch(e){ return { players: [], weekly: {}, positions: {} }; }
   const head = rows.shift() || [];
-  const cols = head.map((h, i)=> ({ i, wk: resolvePreviewWeek(h) })).filter(c=> c.i > 0 && c.wk);
+  /* Primer bloque de semanas = puntos acumulados; si se repiten los encabezados, el segundo
+     bloque trae la posicion oficial de cada semana (con el desempate de la hoja) */
+  const cols = [], posCol = {};
+  head.forEach((h, i)=>{
+    const wk = i > 0 && resolvePreviewWeek(h);
+    if(!wk) return;
+    if(cols.some(c=> c.wk === wk)) posCol[wk] = i; else cols.push({ i, wk });
+  });
   // Jugador del survivor con el mismo nombre; si no, uno cuyo nombre empiece igual (Lizeth / Lizette)
   const sv = svPlayers.map(p=> ({ id: p.id, key: previewNameKey(p.name) }));
   const idFor = name=>{
@@ -128,13 +135,15 @@ async function previewPickemGeneral(svPlayers){
     const near = k.length >= 5 ? sv.filter(p=> p.key.slice(0, 5) === k.slice(0, 5)) : [];
     return near.length === 1 ? near[0].id : 'pk:' + k;
   };
-  const players = [], cum = {};
+  const num = v=> { const n = parseFloat(String(v || '').replace(',', '.')); return isNaN(n) ? null : n; };
+  const players = [], cum = {}, pos = {};
   rows.forEach(r=>{
     const name = (r[0] || '').trim();
     if(!name) return;
     const id = idFor(name);
     players.push({ id, name });
-    cum[id] = cols.map(c=> { const v = parseFloat(String(r[c.i] || '').replace(',', '.')); return isNaN(v) ? null : v; });
+    cum[id] = cols.map(c=> num(r[c.i]));
+    pos[id] = Object.fromEntries(Object.entries(posCol).map(([wk, i])=> [wk, num(r[i])]));
   });
   // Puntos de cada semana = acumulado - acumulado anterior; solo semanas en que algo cambio
   const weekly = {};
@@ -148,7 +157,13 @@ async function previewPickemGeneral(svPlayers){
     });
     if(changed) weekly[c.wk] = pts;
   });
-  return { players, weekly };
+  const positions = {};
+  Object.keys(weekly).forEach(wk=>{
+    if(!(wk in posCol)) return;
+    const byId = Object.fromEntries(players.map(p=> [p.id, pos[p.id][wk]]));
+    if(Object.values(byId).every(v=> v != null)) positions[wk] = byId;
+  });
+  return { players, weekly, positions };
 }
 function resolvePreviewWeek(h){
   const m = String(h || '').match(/(\d+)/);
@@ -220,7 +235,7 @@ function previewPublication(db){
     snapshot: { version: 1, throughWeek: through,
       survivor: { startingLivesDefault: db.settings.startingLivesDefault, missedPickCostsLife: db.settings.missedPickCostsLife,
                   maxAgainst: db.settings.maxAgainst, showLogos: db.settings.showLogos, players, finished, results: sv.results },
-      pickem: { tieMargin: tie, weekly, elo: computeElo(weekly, pkIds), outcomes, players: db.pickem.players } }
+      pickem: { tieMargin: tie, weekly, elo: computeElo(weekly, pkIds), outcomes, players: db.pickem.players, positions: db.pickem.positions } }
   };
 }
 
