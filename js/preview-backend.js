@@ -118,8 +118,8 @@ async function previewPickemGeneral(svPlayers){
   let rows;
   try{ rows = previewCsvRows(await (await fetch(url, { cache: 'no-store' })).text()); }catch(e){ return { players: [], weekly: {}, positions: {} }; }
   const head = rows.shift() || [];
-  /* Primer bloque de semanas = puntos acumulados; si se repiten los encabezados, el segundo
-     bloque trae la posicion oficial de cada semana (con el desempate de la hoja) */
+  /* Primer bloque de semanas = puntos acumulados; si las semanas se repiten (WK 1 o solo 1, 2…),
+     el segundo bloque trae por semana el Elo de la hoja o la posicion oficial */
   const cols = [], posCol = {};
   head.forEach((h, i)=>{
     const wk = i > 0 && resolvePreviewWeek(h);
@@ -157,13 +157,18 @@ async function previewPickemGeneral(svPlayers){
     });
     if(changed) weekly[c.wk] = pts;
   });
-  const positions = {};
-  Object.keys(weekly).forEach(wk=>{
-    if(!(wk in posCol)) return;
-    const byId = Object.fromEntries(players.map(p=> [p.id, pos[p.id][wk]]));
-    if(Object.values(byId).every(v=> v != null)) positions[wk] = byId;
+  // Valores hasta el numero de jugadores = posiciones; mas grandes = Elo (desempate de la tabla)
+  const positions = {}, elo = {};
+  const extra = Object.keys(weekly).filter(wk=> wk in posCol && players.every(p=> pos[p.id][wk] != null));
+  const isElo = extra.some(wk=> players.some(p=> pos[p.id][wk] > players.length));
+  let prevElo = null;
+  WEEKS.filter(w=> extra.includes(w.key)).forEach(w=>{
+    const byId = Object.fromEntries(players.map(p=> [p.id, pos[p.id][w.key]]));
+    if(!isElo){ positions[w.key] = byId; return; }
+    elo[w.key] = Object.fromEntries(players.map(p=> [p.id, { elo: byId[p.id], change: byId[p.id] - (prevElo ? prevElo[p.id] : ELO_START) }]));
+    prevElo = byId;
   });
-  return { players, weekly, positions };
+  return { players, weekly, positions, elo: isElo && Object.keys(elo).length ? elo : null };
 }
 function resolvePreviewWeek(h){
   const m = String(h || '').match(/(\d+)/);
@@ -235,7 +240,7 @@ function previewPublication(db){
     snapshot: { version: 1, throughWeek: through,
       survivor: { startingLivesDefault: db.settings.startingLivesDefault, missedPickCostsLife: db.settings.missedPickCostsLife,
                   maxAgainst: db.settings.maxAgainst, showLogos: db.settings.showLogos, players, finished, results: sv.results },
-      pickem: { tieMargin: tie, weekly, elo: computeElo(weekly, pkIds), outcomes, players: db.pickem.players, positions: db.pickem.positions } }
+      pickem: { tieMargin: tie, weekly, elo: db.pickem.elo || computeElo(weekly, pkIds), outcomes, players: db.pickem.players, positions: db.pickem.positions } }
   };
 }
 

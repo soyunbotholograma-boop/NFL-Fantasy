@@ -444,20 +444,23 @@ async function fetchCSV(url){
 
 function buildData(rows, posMap){
   const header = rows[0] || [];
-  /* Primer bloque de semanas = puntos acumulados. Si los encabezados se repiten (WK 1… otra vez),
-     ese segundo bloque trae la posicion oficial de cada semana, ya con el desempate de la hoja. */
-  const weekCols = [], posCols = [], seen = new Map();
+  /* Primer bloque de semanas = puntos acumulados (WK 1, WK 2…). Si despues vuelven a salir las
+     mismas semanas (WK 1 o solo 1, 2…), ese segundo bloque trae por semana el Elo (para desempatar)
+     o directamente la posicion oficial. */
+  const weekCols = [], extraCols = [], seen = new Map();
   for(let c=1;c<header.length;c++){
-    const h = header[c].trim().toUpperCase();
+    const h = header[c].trim();
     if(!h) continue;
-    if(seen.has(h)) posCols[seen.get(h)] = c;
-    else { seen.set(h, weekCols.length); weekCols.push(c); }
+    const num = (h.match(/(\d+)/) || [])[1];
+    const key = num || h.toUpperCase();
+    if(seen.has(key)) extraCols[seen.get(key)] = c;
+    else { seen.set(key, weekCols.length); weekCols.push(c); }
   }
   const players = [];
   rows.slice(1).forEach(r => {
     const name = (r[0] || '').trim();
     if(!name) return;
-    players.push({ name, raw: weekCols.map(c => parseNum(r[c])), sheetRanks: weekCols.map((_, w) => posCols[w] ? parseNum(r[posCols[w]]) : null) });
+    players.push({ name, raw: weekCols.map(c => parseNum(r[c])), extra: weekCols.map((_, w) => extraCols[w] ? parseNum(r[extraCols[w]]) : null) });
   });
   if(!players.length || !weekCols.length) throw new Error('No encontré jugadores o columnas de semanas.');
 
@@ -478,14 +481,30 @@ function buildData(rows, posMap){
     if(players.some(p => p.vals[w] !== p.vals[w-1])) lastPlayed = w;
   }
 
-  // Posiciones de la hoja (segundo bloque) en todas las semanas, si vienen completas
-  const sheetRanked = players.every(p => p.sheetRanks.slice(0, nWeeks).every(v => v !== null));
+  // Segundo bloque completo: valores hasta el numero de jugadores = posiciones; mas grandes = Elo
+  const extraFull = players.length > 0 && players.every(p => p.extra.slice(0, nWeeks).every(v => v !== null));
+  const extraMax = extraFull ? Math.max(...players.map(p => Math.max(...p.extra.slice(0, nWeeks)))) : 0;
+  const sheetRanked = extraFull && extraMax <= players.length;
+  const eloTie = extraFull && !sheetRanked;
   if(sheetRanked){
-    players.forEach(p => { p.ranks = p.sheetRanks.slice(0, nWeeks); p.pos = p.ranks[lastPlayed]; });
+    players.forEach(p => { p.ranks = p.extra.slice(0, nWeeks); p.pos = p.ranks[lastPlayed]; });
+  }
+  if(eloTie){
+    // Mas puntos arriba; con los mismos puntos, mas Elo de esa semana arriba (empate solo si ambos son iguales)
+    for(let w=0; w<nWeeks; w++){
+      players.forEach(p => {
+        let r = 1;
+        players.forEach(q => {
+          if(q !== p && (q.vals[w] > p.vals[w] || (q.vals[w] === p.vals[w] && q.extra[w] > p.extra[w]))) r++;
+        });
+        (p.ranks || (p.ranks = []))[w] = r;
+      });
+    }
+    players.forEach(p => { p.elo = p.extra.slice(0, nWeeks); p.pos = p.ranks[lastPlayed]; });
   }
   // Si no, ranking estilo competencia (empates comparten lugar: 1,1,3…) y
   // desde la última semana jugada los empates se rompen con la Posicion oficial.
-  for(let w=0; w<nWeeks && !sheetRanked; w++){
+  for(let w=0; w<nWeeks && !sheetRanked && !eloTie; w++){
     players.forEach(p => {
       let r = 1;
       players.forEach(q => {
@@ -500,6 +519,7 @@ function buildData(rows, posMap){
     weeks: weekCols.slice(0, nWeeks).map(c => header[c].trim().toUpperCase()),
     players,
     sheetRanked,
+    eloTie,
     lastPlayed,
     maxScore: Math.max(...players.map(p => Math.max(...p.vals)))
   };
@@ -549,6 +569,7 @@ function useData(rows, posMap, note, ranks){
   // Posiciones dadas (las de la tabla del pick'em, que desempata por Elo) en lugar de calcularlas
   if(ranks) data.players.forEach(p => { const r = ranks[p.name]; if(r && r.length === p.ranks.length) p.ranks = r.slice(); });
   if(data.sheetRanked) note = ' · Posiciones de la hoja ✓';
+  else if(data.eloTie) note = ' · Empates por Elo ✓';
   else if(posMap && !ME_MODE){
     const missing = data.players.filter(p => p.pos === null).map(p => p.name);
     note = missing.length ? ' · Sin Posicion: ' + missing.join(', ') : ' · Desempate con Posicion ✓';
