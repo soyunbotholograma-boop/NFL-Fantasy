@@ -113,7 +113,7 @@
         <div class="toolbar">
           <div class="group"><span class="empty-note">Cómo te has movido en la tabla de la liga de fantasy, semana a semana. Es la misma carrera de posiciones de la liga, enfocada en ti.</span></div>
         </div>
-        <iframe class="race-frame" id="raceFrame" title="Mi carrera de posiciones" loading="lazy"></iframe>
+        <iframe class="race-frame" id="raceFrame" title="Mi carrera de posiciones"></iframe>
       </div>
     </div>
 
@@ -381,6 +381,24 @@ function myPickemPlayer(){
   return list.find(p=> p.id === me.id) || list.find(p=> normName(p.name) === normName(me.name)) || null;
 }
 
+/* Tabla del pick'em en una semana. Si la publicacion trae las posiciones oficiales de cada semana
+   (pickem.positions, ya con el desempate de la hoja), esas mandan sobre el calculo por Elo. */
+function standingsAt(weekKey){
+  const { weekly, elo, positions } = pub.snapshot.pickem;
+  const res = pickemStandings(pickemPlayers(), weekly, elo, weekKey);
+  const pos = positions && positions[res.weekKey];
+  if(pos){
+    const wks = WEEKS.filter(w=> weekly[w.key] && WEEK_INDEX[w.key] < WEEK_INDEX[res.weekKey]);
+    const prev = wks.length && positions[wks[wks.length-1].key];
+    res.rows.forEach(r=>{
+      if(pos[r.player.id] != null) r.pos = pos[r.player.id];
+      if(prev && prev[r.player.id] != null) r.move = prev[r.player.id] - r.pos;
+    });
+    res.rows.sort((a,b)=> a.pos - b.pos);
+  }
+  return res;
+}
+
 /* ---------------- POSICIONES ---------------- */
 function renderStandings(){
   const table = document.getElementById('standingsTable');
@@ -389,8 +407,7 @@ function renderStandings(){
     table.innerHTML = '<tr><td class="empty-note">Todavía no hay posiciones publicadas.</td></tr>';
     return;
   }
-  const { weekly, elo } = pub.snapshot.pickem;
-  const res = pickemStandings(pickemPlayers(), weekly, elo, sel.value);
+  const res = standingsAt(sel.value);
   const mv = (n)=> n > 0 ? `<span class="mv up">▲${n}</span>` : n < 0 ? `<span class="mv down">▼${-n}</span>` : '<span class="mv same">—</span>';
   const signed = (n)=> (n > 0 ? '+' : '') + n;
   table.innerHTML = `<thead><tr><th>#</th><th></th><th class="l">Jugador</th><th>${escapeHtml(WEEK_LABEL[res.weekKey] || '')}</th><th>Total</th><th>Elo</th><th>Cambio</th></tr></thead><tbody>`
@@ -443,7 +460,7 @@ function sendRaceData(){
   const ranks = Object.fromEntries(players.map(p=> [p.name, []]));
   let final = null;
   weeks.forEach(w=>{
-    final = pickemStandings(players, weekly, elo, w.key);
+    final = standingsAt(w.key);
     final.rows.forEach(r=> ranks[r.player.name].push(r.pos));
   });
   frame.contentWindow.postMessage({ type: 'race-data', rows, ranks, pos: final.rows.map(r=> [r.player.name, r.pos]) }, location.origin);
@@ -474,7 +491,7 @@ function pickemAnalysis(pkMe){
   const rows = weeks.map(w=>{
     const all = players.map(p=> pk.weekly[w.key][p.id] || 0);
     const mine = pk.weekly[w.key][pkMe.id] || 0;
-    const st = pickemStandings(players, pk.weekly, pk.elo, w.key);
+    const st = standingsAt(w.key);
     const r = st.rows.find(x=> x.player.id === pkMe.id);
     return { wk: w, pts: mine, avg: all.reduce((a,b)=>a+b, 0) / all.length, max: Math.max(...all), min: Math.min(...all),
              pos: r.pos, total: r.total, elo: r.elo, eloChange: r.eloChange, leader: st.rows[0], table: st.rows };
